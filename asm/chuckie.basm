@@ -112,7 +112,7 @@ ORG &0900
 {
     LXY msg_key_selection
     JSR write_counted_string
-    LDA #&AC
+    LDA #osbyte_AC_key_code_to_ascii_table
     LDX #&00
     LDY #&FF
     JSR osbyte
@@ -144,23 +144,23 @@ ORG &0900
     STA key_jump
     RTS
     .select_key
-    LDA #&79
-    LDX #&80
+    LDA #osbyte_79_keyboard_scan
+    LDX #scan_SHIFT EOR &80
     JSR osbyte
     TXA
     BPL not_shift
     LDX #&00
     JMP key_pressed
     .not_shift
-    LDA #&79
-    LDX #&81
+    LDA #osbyte_79_keyboard_scan
+    LDX #scan_CTRL EOR &80
     JSR osbyte
     TXA
     BPL not_ctrl
     LDX #&01
     JMP key_pressed
     .not_ctrl
-    LDA #&7A
+    LDA #osbyte_7A_keyboard_scan_from_16
     JSR osbyte
     CPX #&FF
     BEQ select_key
@@ -201,7 +201,7 @@ ORG &0900
     BEQ no_clash
     LDA &8E
     BEQ no_clash
-    LDA #&D6
+    LDA #osbyte_D6_bell_duration
     LDX #&01
     LDY #&00
     JSR osbyte
@@ -436,7 +436,7 @@ ORG &0900
 {
     LXY msg_key_display
     JSR write_counted_string
-    LDA #&AC
+    LDA #osbyte_AC_key_code_to_ascii_table
     LDX #&00
     LDY #&FF
     JSR osbyte
@@ -544,7 +544,7 @@ ORG &0900
     .play_sound1
     STA sound1_pitch
     LXY sound1
-    LDA #&07
+    LDA #osword_7_play_sound
     JSR osword
     RTS
     .sound1
@@ -814,20 +814,20 @@ INCLUDE "sprites.basm"
 {
     LDX #scan_H EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ test_player_keys
     .pause_loop
     LDX #scan_H EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ test_pause_over
     LDX #scan_ESCAPE EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ test_pause_over
@@ -856,7 +856,7 @@ INCLUDE "sprites.basm"
     RTS
     .test_next_key
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ not_pressed
@@ -946,7 +946,7 @@ INCLUDE "sprites.basm"
 
 .wait_for_interval_timer
 {
-    LDA #&03
+    LDA #osword_3_read_interval_timer
     LXY interval_time
     JSR osword
     LDA &01
@@ -958,7 +958,7 @@ INCLUDE "sprites.basm"
     LDA #&00
     STA &00
     STA &01
-    LDA #&04
+    LDA #osword_4_write_interval_timer
     LXY interval_time
     JSR osword
     RTS
@@ -1956,7 +1956,7 @@ INCLUDE "sprites.basm"
     LDA #&06
     STA sound3_pitch
     LXY sound3
-    LDA #&07
+    LDA #osword_7_play_sound
     JSR osword
     LDA param
     LSR A
@@ -1986,7 +1986,7 @@ INCLUDE "sprites.basm"
     LDA #&05
     STA sound3_pitch
     LXY sound3
-    LDA #&07
+    LDA #osword_7_play_sound
     JSR osword
     LDA param
     LSR A
@@ -3026,18 +3026,18 @@ INCLUDE "sprites.basm"
     JSR draw_highscores
     LXY msg_name_move
     JSR write_counted_string
-    LDA #&04
+    LDA #osbyte_04_cursor_key_effect
     LDX #&01
     JSR osbyte
-    LDA #&0F
+    LDA #osbyte_0F_flush_buffer_class
     LDX #&01
     JSR osbyte
-    LDA #&E5
+    LDA #osbyte_E5_escape_key_effect
     LDX #&01
     LDY #&00
     JSR osbyte
     LXY osword_line_block
-    LDA #&00
+    LDA #osword_0_read_line
     JSR osword
     LDX param
     JSR location_of_highscore_x
@@ -3138,7 +3138,7 @@ EQUB &00
     JSR init_level_state
     JSR init_and_draw_level
     JSR init_mobile_things
-    LDA #&7C
+    LDA #osbyte_7C_clear_escape
     JSR osbyte
     .game_loop
     JSR test_keys
@@ -3174,7 +3174,7 @@ EQUB &00
     BNE skip_bonus_sound
     .fifty_divides_bonus
     LXY sound4
-    LDA #&07
+    LDA #osword_7_play_sound
     JSR osword
     .skip_bonus_sound
     LDA bonus_gone_flag
@@ -3202,7 +3202,7 @@ EQUB &00
     JSR oswrch
     LDA #&0A
     JSR sleep
-    LDA #&7C
+    LDA #osbyte_7C_clear_escape
     JSR osbyte
     JSR check_highscore
     LDA #&05
@@ -3250,7 +3250,7 @@ EQUB &00
         .MSG_END
     }
     .one_time_init
-    LDA #&8C
+    LDA #osbyte_8C_select_tape
     LDX #&0C
     LDY #&00
     JSR osbyte
@@ -3294,13 +3294,13 @@ EQUB &00
     STA key_right
     JSR init_highscores
     LXY envelope1
-    LDA #&08
+    LDA #osword_8_define_envelope
     JSR osword
     LXY envelope2
-    LDA #&08
+    LDA #osword_8_define_envelope
     JSR osword
     LXY envelope3
-    LDA #&08
+    LDA #osword_8_define_envelope
     JSR osword
     LDX #&0F
     STX param
@@ -3353,7 +3353,7 @@ EQUB &00
     .wait_for_player_count_loop
     LDX #scan_1 EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ one_not_pressed
@@ -3362,7 +3362,7 @@ EQUB &00
     .one_not_pressed
     LDX #scan_2 EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ two_not_pressed
@@ -3371,7 +3371,7 @@ EQUB &00
     .two_not_pressed
     LDX #scan_3 EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ three_not_pressed
@@ -3380,7 +3380,7 @@ EQUB &00
     .three_not_pressed
     LDX #scan_4 EOR &FF
     LDY #&FF
-    LDA #&81
+    LDA #osbyte_81_inkey
     JSR osbyte
     CPY #&00
     BEQ four_not_pressed
@@ -3588,7 +3588,7 @@ EQUB &00
         .MSG_END
     }
     .carousel_test_keys
-    LDA #&81
+    LDA #osbyte_81_inkey
     LDX #scan_S EOR &FF
     LDY #&FF
     JSR osbyte
@@ -3598,7 +3598,7 @@ EQUB &00
     TXS
     RTS
     .s_not_pressed
-    LDA #&81
+    LDA #osbyte_81_inkey
     LDX #scan_K EOR &FF
     LDY #&FF
     JSR osbyte
@@ -3895,7 +3895,7 @@ EQUB &00
     STA sound2_duration
     STY &89
     LXY sound2
-    LDA #&07
+    LDA #osword_7_play_sound
     JSR osword
     DEC loop_counter
     BNE play_tune_loop

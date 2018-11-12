@@ -85,6 +85,42 @@ scan_PAD_2=&7C
 scan_PAD_3=&6C
 scan_PAD_COMMA=&5C
 scan_SHIFTLOCK=&50
+scan_SHIFT=&00
+scan_Z=&61
+scan_X=&42
+scan_C=&52
+scan_V=&63
+scan_B=&64
+scan_N=&55
+scan_M=&65
+scan_COMMA=&66
+scan_FULLSTOP=&67
+scan_SLASH=&68
+scan_DELETE=&59
+scan_COPY=&69
+scan_PAD_0=&6A
+scan_PAD_FULLSTOP=&4C
+scan_PAD_RETURN=&3C
+scan_SPACE=&62
+
+; OSWORD calls
+osword_0_read_line=0
+osword_3_read_interval_timer=3
+osword_4_write_interval_timer=4
+osword_7_play_sound=7
+osword_8_define_envelope=8
+
+; OSBYTE calls
+osbyte_04_cursor_key_effect=&04
+osbyte_0F_flush_buffer_class=&0F
+osbyte_79_keyboard_scan=&79
+osbyte_7A_keyboard_scan_from_16=&7A
+osbyte_7C_clear_escape=&7C
+osbyte_81_inkey=&81
+osbyte_8C_select_tape=&8C
+osbyte_AC_key_code_to_ascii_table=&AC
+osbyte_D6_bell_duration=&D6
+osbyte_E5_escape_key_effect=&E5
 
 ; Macro to initialise a counted string
 MACRO MSG_LENGTH
