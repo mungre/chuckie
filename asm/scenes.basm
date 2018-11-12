@@ -1,0 +1,506 @@
+.scenario_lookup_table
+EQUW scenario_0
+EQUW scenario_1
+EQUW scenario_2
+EQUW scenario_3
+EQUW scenario_4
+EQUW scenario_5
+EQUW scenario_6
+EQUW scenario_7
+.scenario_0
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,2
+.walls
+EQUB 1, 0, 19
+EQUB 6, 1, 18
+EQUB 11, 2, 8
+EQUB 11, 14, 18
+EQUB 12, 9, 10
+EQUB 13, 11, 12
+EQUB 14, 13, 14
+EQUB 15, 15, 16
+EQUB 16, 3, 7
+EQUB 17, 9, 11
+EQUB 21, 5, 9
+EQUB 21, 11, 16
+EQUB 21, 18, 19
+.ladders
+EQUB 3, 7, 13
+EQUB 7, 2, 23
+EQUB 11, 2, 8
+EQUB 16, 2, 8
+.lift
+.eggs
+EQUB 4, 2
+EQUB 1, 7
+EQUB 13, 7
+EQUB 18, 7
+EQUB 2, 12
+EQUB 10, 13
+EQUB 17, 12
+EQUB 4, 17
+EQUB 10, 18
+EQUB 6, 22
+EQUB 13, 22
+EQUB 19, 22
+.grain
+EQUB 2, 2
+EQUB 13, 2
+EQUB 5, 7
+EQUB 14, 7
+EQUB 5, 12
+EQUB 15, 12
+EQUB 16, 16
+EQUB 11, 18
+EQUB 9, 22
+EQUB 14, 22
+.chickens
+EQUB 5, 17
+EQUB 8, 22
+EQUB 4, 12
+EQUB 6, 7
+EQUB 12, 2
+}
+.scenario_1
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,3
+.walls
+EQUB 1, 0, 3
+EQUB 1, 5, 19
+EQUB 6, 0, 6
+EQUB 6, 8, 10
+EQUB 6, 12, 14
+EQUB 6, 16, 19
+EQUB 11, 0, 3
+EQUB 11, 5, 14
+EQUB 11, 16, 19
+EQUB 16, 0, 10
+EQUB 16, 12, 19
+EQUB 21, 4, 10
+EQUB 21, 12, 19
+.ladders
+EQUB 2, 2, 18
+EQUB 4, 17, 23
+EQUB 6, 7, 18
+EQUB 9, 2, 8
+EQUB 9, 12, 23
+EQUB 13, 12, 18
+EQUB 17, 2, 13
+EQUB 17, 17, 23
+.lift
+.eggs
+EQUB 5, 2
+EQUB 12, 2
+EQUB 0, 7
+EQUB 4, 7
+EQUB 13, 7
+EQUB 0, 12
+EQUB 7, 12
+EQUB 19, 12
+EQUB 7, 17
+EQUB 7, 22
+EQUB 15, 22
+EQUB 19, 22
+.grain
+EQUB 0, 2
+EQUB 3, 2
+EQUB 15, 2
+EQUB 16, 7
+EQUB 0, 17
+EQUB 10, 17
+EQUB 12, 22
+.chickens
+EQUB 6, 22
+EQUB 1, 2
+EQUB 18, 12
+EQUB 11, 12
+EQUB 13, 22
+}
+.scenario_2
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,3
+.walls
+EQUB 1, 0, 2
+EQUB 2, 3, 4
+EQUB 1, 7, 9
+EQUB 1, 11, 19
+EQUB 5, 15, 18
+EQUB 10, 0, 4
+EQUB 15, 0, 3
+EQUB 19, 3, 4
+EQUB 6, 7, 10
+EQUB 6, 12, 12
+EQUB 7, 14, 14
+EQUB 8, 15, 15
+EQUB 9, 17, 17
+EQUB 10, 18, 19
+EQUB 12, 12, 13
+EQUB 12, 15, 15
+EQUB 15, 18, 19
+EQUB 16, 17, 17
+EQUB 17, 15, 15
+EQUB 18, 12, 13
+EQUB 19, 7, 11
+EQUB 21, 13, 15
+EQUB 20, 16, 16
+EQUB 20, 18, 19
+.ladders
+EQUB 1, 2, 12
+EQUB 3, 11, 21
+EQUB 8, 7, 21
+EQUB 10, 7, 21
+EQUB 13, 19, 23
+EQUB 18, 2, 7
+EQUB 19, 11, 17
+.lift
+EQUB 5
+.eggs
+EQUB 4, 3
+EQUB 15, 2
+EQUB 16, 6
+EQUB 4, 11
+EQUB 4, 20
+EQUB 9, 7
+EQUB 15, 9
+EQUB 15, 13
+EQUB 1, 16
+EQUB 17, 17
+EQUB 19, 18
+EQUB 19, 21
+.grain
+EQUB 2, 2
+EQUB 2, 11
+EQUB 7, 7
+EQUB 7, 20
+EQUB 0, 16
+EQUB 13, 2
+EQUB 12, 19
+EQUB 15, 18
+EQUB 13, 13
+EQUB 18, 21
+.chickens
+EQUB 2, 16
+EQUB 9, 20
+EQUB 17, 6
+EQUB 0, 2
+EQUB 8, 7
+}
+.scenario_3
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,4
+.walls
+EQUB 1, 0, 4
+EQUB 1, 6, 10
+EQUB 1, 13, 19
+EQUB 6, 0, 4
+EQUB 6, 7, 10
+EQUB 6, 13, 17
+EQUB 5, 19, 19
+EQUB 12, 0, 1
+EQUB 13, 3, 3
+EQUB 14, 5, 5
+EQUB 15, 7, 8
+EQUB 11, 7, 8
+EQUB 11, 13, 16
+EQUB 10, 18, 19
+EQUB 16, 8, 10
+EQUB 17, 0, 0
+EQUB 18, 2, 2
+EQUB 19, 3, 3
+EQUB 20, 4, 4
+EQUB 21, 5, 5
+EQUB 21, 7, 10
+EQUB 16, 13, 14
+EQUB 16, 16, 16
+EQUB 16, 18, 19
+EQUB 21, 13, 15
+EQUB 21, 17, 19
+.ladders
+EQUB 3, 2, 8
+EQUB 8, 2, 23
+EQUB 14, 12, 23
+EQUB 15, 2, 8
+EQUB 19, 16, 23
+.lift
+EQUB 11
+.eggs
+EQUB 0, 2
+EQUB 0, 13
+EQUB 0, 18
+EQUB 7, 7
+EQUB 9, 17
+EQUB 13, 2
+EQUB 16, 7
+EQUB 13, 12
+EQUB 19, 11
+EQUB 17, 16
+EQUB 16, 21
+EQUB 16, 24
+.grain
+EQUB 0, 7
+EQUB 10, 2
+EQUB 18, 2
+EQUB 5, 15
+EQUB 9, 22
+EQUB 13, 22
+.chickens
+EQUB 10, 22
+EQUB 17, 22
+EQUB 17, 2
+EQUB 4, 2
+EQUB 10, 7
+}
+.scenario_4
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,4
+.walls
+EQUB 1, 0, 1
+EQUB 1, 3, 11
+EQUB 1, 13, 15
+EQUB 1, 18, 19
+EQUB 6, 0, 5
+EQUB 6, 9, 12
+EQUB 6, 14, 15
+EQUB 11, 0, 5
+EQUB 11, 10, 15
+EQUB 11, 19, 19
+EQUB 16, 0, 5
+EQUB 21, 3, 7
+EQUB 20, 9, 9
+EQUB 19, 11, 13
+EQUB 18, 14, 14
+EQUB 22, 12, 15
+EQUB 21, 18, 19
+.ladders
+EQUB 3, 2, 8
+EQUB 2, 12, 18
+EQUB 4, 12, 23
+EQUB 7, 2, 7
+EQUB 7, 10, 17
+EQUB 10, 2, 8
+EQUB 12, 7, 13
+EQUB 12, 20, 24
+EQUB 14, 2, 8
+.lift
+EQUB 16
+.eggs
+EQUB 0, 2
+EQUB 0, 7
+EQUB 0, 12
+EQUB 0, 17
+EQUB 5, 7
+EQUB 5, 22
+EQUB 9, 11
+EQUB 13, 6
+EQUB 11, 20
+EQUB 13, 23
+EQUB 19, 12
+EQUB 19, 22
+.grain
+EQUB 4, 2
+EQUB 5, 2
+EQUB 6, 2
+EQUB 13, 2
+EQUB 15, 2
+EQUB 18, 2
+EQUB 10, 12
+EQUB 15, 12
+EQUB 3, 22
+EQUB 6, 22
+EQUB 7, 22
+EQUB 15, 23
+EQUB 18, 22
+.chickens
+EQUB 1, 7
+EQUB 3, 12
+EQUB 1, 17
+EQUB 14, 12
+EQUB 15, 7
+}
+.scenario_5
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,4
+.walls
+EQUB 1, 0, 2
+EQUB 1, 6, 8
+EQUB 1, 11, 14
+EQUB 6, 0, 1
+EQUB 6, 3, 5
+EQUB 6, 12, 14
+EQUB 11, 2, 7
+EQUB 11, 12, 17
+EQUB 10, 17, 19
+EQUB 16, 0, 5
+EQUB 16, 16, 19
+EQUB 21, 6, 6
+EQUB 21, 8, 8
+EQUB 20, 12, 17
+EQUB 22, 17, 19
+EQUB 2, 17, 17
+.ladders
+EQUB 0, 2, 8
+EQUB 4, 4, 18
+EQUB 14, 7, 13
+EQUB 14, 19, 23
+EQUB 17, 2, 13
+EQUB 17, 16, 24
+.lift
+EQUB 9
+.eggs
+EQUB 2, 2
+EQUB 16, 2
+EQUB 5, 7
+EQUB 12, 7
+EQUB 12, 12
+EQUB 16, 12
+EQUB 7, 17
+EQUB 3, 21
+EQUB 6, 22
+EQUB 12, 21
+EQUB 19, 17
+EQUB 19, 23
+.grain
+EQUB 11, 2
+EQUB 12, 2
+EQUB 13, 2
+EQUB 14, 2
+EQUB 0, 17
+EQUB 2, 17
+EQUB 3, 17
+EQUB 7, 12
+EQUB 19, 11
+.chickens
+EQUB 1, 17
+EQUB 1, 2
+EQUB 18, 17
+EQUB 13, 7
+EQUB 18, 11
+}
+.scenario_6
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,3
+.walls
+EQUB 21, 11, 16
+EQUB 16, 0, 4
+EQUB 16, 6, 7
+EQUB 11, 0, 2
+EQUB 6, 1, 3
+EQUB 4, 0, 1
+EQUB 1, 3, 4
+EQUB 2, 5, 6
+EQUB 1, 7, 8
+EQUB 2, 9, 9
+EQUB 3, 9, 9
+EQUB 3, 12, 12
+EQUB 8, 5, 8
+EQUB 9, 5, 5
+EQUB 10, 5, 5
+EQUB 11, 5, 5
+EQUB 12, 5, 5
+EQUB 11, 8, 8
+EQUB 12, 8, 8
+EQUB 15, 12, 15
+EQUB 11, 10, 11
+EQUB 9, 14, 16
+EQUB 2, 15, 16
+.ladders
+EQUB 1, 2, 18
+EQUB 3, 2, 8
+EQUB 5, 20, 24
+EQUB 7, 20, 24
+EQUB 9, 20, 24
+EQUB 13, 16, 23
+EQUB 15, 10, 17
+.lift
+EQUB 18
+.eggs
+EQUB 6, 23
+EQUB 8, 23
+EQUB 10, 23
+EQUB 15, 22
+EQUB 7, 17
+EQUB 2, 3
+EQUB 7, 9
+EQUB 11, 12
+EQUB 16, 15
+EQUB 16, 10
+EQUB 12, 4
+EQUB 17, 2
+.grain
+EQUB 2, 7
+EQUB 3, 17
+EQUB 8, 9
+EQUB 12, 22
+.chickens
+EQUB 13, 22
+EQUB 1, 17
+EQUB 14, 10
+EQUB 0, 5
+EQUB 2, 12
+}
+.scenario_7
+{
+EQUB (ladders-walls)/3,(lift-ladders)/3,eggs-lift,(chickens-grain)/2,3
+.walls
+EQUB 1, 0, 19
+EQUB 6, 2, 4
+EQUB 6, 7, 13
+EQUB 6, 16, 18
+EQUB 11, 2, 5
+EQUB 11, 8, 12
+EQUB 11, 15, 18
+EQUB 16, 3, 6
+EQUB 16, 9, 11
+EQUB 16, 14, 17
+EQUB 21, 3, 3
+EQUB 21, 6, 6
+EQUB 21, 8, 12
+EQUB 21, 14, 14
+EQUB 21, 17, 17
+.ladders
+EQUB 3, 2, 8
+EQUB 17, 2, 8
+EQUB 10, 7, 13
+EQUB 4, 12, 18
+EQUB 16, 12, 18
+EQUB 10, 17, 23
+.lift
+.eggs
+EQUB 5, 6
+EQUB 15, 6
+EQUB 6, 11
+EQUB 14, 11
+EQUB 8, 16
+EQUB 12, 16
+EQUB 5, 21
+EQUB 15, 21
+EQUB 7, 21
+EQUB 13, 21
+EQUB 3, 24
+EQUB 17, 24
+.grain
+EQUB 1, 2
+EQUB 2, 2
+EQUB 4, 2
+EQUB 5, 2
+EQUB 6, 2
+EQUB 8, 2
+EQUB 9, 2
+EQUB 10, 2
+EQUB 11, 2
+EQUB 12, 2
+EQUB 13, 2
+EQUB 14, 2
+EQUB 15, 2
+EQUB 16, 2
+EQUB 18, 2
+EQUB 19, 2
+.chickens
+EQUB 17, 2
+EQUB 10, 12
+EQUB 10, 22
+EQUB 3, 17
+EQUB 17, 17
+}
+; padding
+EQUB &55, &42, &28, &34, &29, &3A, &20, &45
