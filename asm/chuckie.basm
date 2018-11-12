@@ -1,4 +1,5 @@
 
+interval_time=&00
 carousel_stack_top=&1B
 clock_stop_timer=&1C
 timer_2=&1D
@@ -85,12 +86,16 @@ chicken_board_ys=&040F
 chicken_states=&0414
 chicken_sprite_indices=&0419
 chicken_directions=&041E
+highscore_table=&0430
 player_score=&0500
 player_level_bonus=&0508
 player_egg_flags=&0510
 player_grain_flags=&0520
 board_page1=&0600
 board_page2=&0700
+
+screen_start_page=&30
+
 oswrch=&FFEE
 osword=&FFF1
 osbyte=&FFF4
@@ -726,7 +731,7 @@ INCLUDE "sprites.basm"
     STA screen_lo
     LDA &74
     ADC screen_hi
-    ADC #&30
+    ADC #screen_start_page
     STA screen_hi
     RTS
 }
@@ -739,10 +744,10 @@ INCLUDE "sprites.basm"
     ROL sprite_hi
     ASL A
     ROL sprite_hi
-    ADC #&00
+    ADC #<sprite_lookup_table
     STA sprite_lo
     LDA sprite_hi
-    ADC #&11
+    ADC #>sprite_lookup_table
     STA sprite_hi
     LDA (sprite_lo),Y
     STA sprite_width_pixels
@@ -942,8 +947,7 @@ INCLUDE "sprites.basm"
 .wait_for_interval_timer
 {
     LDA #&03
-    LDX #&00
-    LDY #&00
+    LXY interval_time
     JSR osword
     LDA &01
     BNE reset_timer
@@ -955,8 +959,7 @@ INCLUDE "sprites.basm"
     STA &00
     STA &01
     LDA #&04
-    LDX #&00
-    LDY #&00
+    LXY interval_time
     JSR osword
     RTS
 }
@@ -2801,10 +2804,10 @@ INCLUDE "sprites.basm"
     ASL A
     ROL sprite_hi
     CLC
-    ADC #&30
+    ADC #<highscore_table
     STA sprite_lo
     LDA sprite_hi
-    ADC #&04
+    ADC #>highscore_table
     STA sprite_hi
     RTS
 }
@@ -3040,7 +3043,7 @@ INCLUDE "sprites.basm"
     JSR location_of_highscore_x
     LDY #&08
     .copy_name_loop
-    LDA line_buffer_minus_eight,Y
+    LDA line_buffer-8,Y
     CMP #&0D
     BEQ rts
     STA (sprite_lo),Y
@@ -3094,9 +3097,7 @@ INCLUDE "sprites.basm"
     EQUS "ENTER YOUR NAME"
     VDU_MOVE 384, 100
     VDU_GCOL 0, 2
-    EQUS "Play"
-    .^line_buffer_minus_eight
-    EQUS "er "
+    EQUS "Player "
     .MSG_END
 }
 .osword_line_block

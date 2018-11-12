@@ -12,21 +12,10 @@ This initial version is entirely machine-generated.  It doesn't have any comment
 
 The disassembler splits the source into scope blocks.  It chooses the minimum number of blocks such that code is always in a block and the entry point isn't.  So the blocks are rather arbitrary.  If the entry point had been at the start then there would be only one block.
 
-All references to memory locations are symbolic except for three because the disassembler isn't smart enough to spot them:
-
-* The reference to sprite_lookup_table (&1100) in lookup_sprite.
-* The reference to the high score table (&0430) in location_of_highscore_x.
-* The reference to the screen start (&3000) in calculate_screen_location.
-
-And one because it creates too many false positives:
-
-* The interval timer buffer (&0000) used in wait_for_interval_timer.
+All references to memory locations are symbolic so it should be possible to rearrange the code.
 
 # TODO
 
-Step away from the disassembler and:
-
-* Fix the four memory references
 * Give names to all the magic numbers (bit masks, osbyte calls, etc.)
 * Add comments
 
