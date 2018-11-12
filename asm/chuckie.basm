@@ -3101,9 +3101,8 @@ INCLUDE "sprites.basm"
     .MSG_END
 }
 .osword_line_block
-EQUB &A2
-EQUS ")"
-EQUB &08
+EQUW line_buffer
+EQUB line_buffer_end - line_buffer - 1
 EQUS " "
 EQUB &7F
 .line_buffer
@@ -3116,6 +3115,7 @@ EQUB &00
 EQUB &00
 EQUB &00
 EQUB &00
+.line_buffer_end
 
 .entry_point
 {
@@ -3257,7 +3257,7 @@ EQUB &00
     LDX #&00
     .download_memory_loop
     LDA &3000,X
-    STA draw_key_selection_indirect,X
+    STA &0900,X
     LDA &3100,X
     STA &0A00,X
     LDA &3200,X
