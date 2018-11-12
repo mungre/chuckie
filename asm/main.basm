@@ -1,0 +1,124 @@
+; Load X and Y with a 16-bit constant
+MACRO LXY a
+    LDX #a MOD 256
+    LDY #a DIV 256
+ENDMACRO
+
+; Create an entry in sprite_lookup_table
+MACRO SPRITE width, height, addr
+    EQUB width, height
+    EQUW addr
+ENDMACRO
+
+; BBC Micro key codes
+scan_f0=&20
+scan_f1=&71
+scan_f2=&72
+scan_f3=&73
+scan_f4=&14
+scan_f5=&74
+scan_f6=&75
+scan_f7=&16
+scan_f8=&76
+scan_f9=&77
+scan_PAD_PLUS=&3A
+scan_PAD_MINUS=&3B
+scan_PAD_DIVIDE=&4A
+scan_PAD_TIMES=&5B
+scan_ESCAPE=&70
+scan_1=&30
+scan_2=&31
+scan_3=&11
+scan_4=&12
+scan_5=&13
+scan_6=&34
+scan_7=&24
+scan_8=&15
+scan_9=&26
+scan_0=&27
+scan_EQUALS=&17
+scan_TILDE=&18
+scan_PIPE=&78
+scan_LEFT=&19
+scan_RIGHT=&79
+scan_PAD_7=&1B
+scan_PAD_8=&2A
+scan_PAD_9=&2B
+scan_PAD_HASH=&5A
+scan_TAB=&60
+scan_Q=&10
+scan_W=&21
+scan_E=&22
+scan_R=&33
+scan_T=&23
+scan_Y=&44
+scan_U=&35
+scan_I=&25
+scan_O=&36
+scan_P=&37
+scan_AT=&47
+scan_LBRACE=&38
+scan_STERLING=&28
+scan_UP=&39
+scan_DOWN=&29
+scan_PAD_4=&7A
+scan_PAD_5=&7B
+scan_PAD_6=&1A
+scan_PAD_DELETE=&4B
+scan_CAPSLOCK=&40
+scan_CTRL=&01
+scan_A=&41
+scan_S=&51
+scan_D=&32
+scan_F=&43
+scan_G=&53
+scan_H=&54
+scan_J=&45
+scan_K=&46
+scan_L=&56
+scan_PLUS=&57
+scan_TIMES=&48
+scan_RBRACE=&58
+scan_RETURN=&49
+scan_PAD_1=&6B
+scan_PAD_2=&7C
+scan_PAD_3=&6C
+scan_PAD_COMMA=&5C
+scan_SHIFTLOCK=&50
+
+; Macro to initialise a counted string
+MACRO MSG_LENGTH
+    EQUB MSG_END-MSG_START
+    .MSG_START
+ENDMACRO
+
+; Macros for vdu sequences
+MACRO VDU_CLG
+    EQUB &10
+ENDMACRO
+
+MACRO VDU_GCOL m, c
+    EQUB &12, m, c
+ENDMACRO
+
+MACRO VDU_GRAPHICS_WINDOW x1, y1, x2, y2
+    EQUB &18, <x1, >x1, <y1, >y1, <x2, >x2, <y2, >y2
+ENDMACRO
+
+MACRO VDU_PLOT p, x, y
+    EQUB &19, p, <x, >x, <y, >y
+ENDMACRO
+
+MACRO VDU_MOVE x, y
+    VDU_PLOT 4, x, y
+ENDMACRO
+
+MACRO VDU_RESET_WINDOW
+    EQUB &1A
+ENDMACRO
+
+INCLUDE "chuckie.basm"
+
+COPYBLOCK &0900,&1100,&3000
+
+SAVE &1100,&3800,entry_point

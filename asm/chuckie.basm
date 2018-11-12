@@ -1,0 +1,6965 @@
+
+carousel_stack_top=&1B
+clock_stop_timer=&1C
+timer_2=&1D
+timer_1=&1E
+timer_0=&1F
+player_lives=&20
+player_levels=&24
+current_score=&28
+duck_x=&30
+duck_y=&31
+duck_vx=&32
+duck_vy=&33
+duck_direction_flap=&34
+duck_loose_flag=&35
+current_chicken=&36
+chicken_speed=&37
+birds_timer_cycle=&38
+egg_remaining_count=&39
+bonus_3=&3A
+bonus_2=&3B
+bonus_1=&3C
+bonus_gone_flag=&3D
+extra_life_flag=&3E
+score_x_position=&3F
+harry_x=&40
+harry_y=&41
+harry_board_x=&42
+harry_board_y=&43
+harry_cell_x=&44
+harry_cell_y=&45
+harry_dx=&46
+harry_dy=&47
+harry_sprite_index=&48
+harry_state=&49
+harry_fall_scaled_vy=&4A
+harry_fall_facing=&4B
+harry_facing=&4C
+round_number=&4D
+player_data_index=&4E
+dead_flag=&4F
+level_number=&50
+scenario_lo=&51
+scenario_hi=&52
+wall_count=&53
+ladder_count=&54
+lift_flag=&55
+grain_count=&56
+chicken_count=&57
+lift_x=&58
+lift_y1=&59
+lift_y2=&5A
+lift_alternator=&5B
+scenario_number=&5C
+player=&5D
+player_total_count=&5E
+player_remaining_count=&5F
+key_press_bits=&60
+key_right=&61
+key_left=&62
+key_down=&63
+key_up=&64
+key_jump=&65
+rand1=&66
+rand2=&67
+rand3=&68
+rand4=&69
+screen_lo=&70
+screen_hi=&71
+screen_row_offset=&72
+screen_col_offset=&73
+string_length=&75
+sprite_lo=&76
+sprite_hi=&77
+sprite_height=&78
+sprite_width_pixels=&79
+sprite_width_bytes=&7A
+sprite_colour_mask_left=&7F
+param=&88
+loop_counter=&8A
+chicken_xs=&0400
+chicken_ys=&0405
+chicken_board_xs=&040A
+chicken_board_ys=&040F
+chicken_states=&0414
+chicken_sprite_indices=&0419
+chicken_directions=&041E
+player_score=&0500
+player_level_bonus=&0508
+player_egg_flags=&0510
+player_grain_flags=&0520
+board_page1=&0600
+board_page2=&0700
+oswrch=&FFEE
+osword=&FFF1
+osbyte=&FFF4
+
+ORG &0900
+
+
+.draw_key_selection_indirect
+{
+    JMP draw_key_selection
+}
+
+.select_keys
+{
+    LXY msg_key_selection
+    JSR write_counted_string
+    LDA #&AC
+    LDX #&00
+    LDY #&FF
+    JSR osbyte
+    STX sprite_lo
+    STY sprite_hi
+    LDA #&00
+    STA key_press_bits
+    LDA #&54
+    STA current_score
+    LXY msg_key_up
+    JSR write_counted_string
+    JSR select_key
+    STA key_up
+    LXY msg_key_down
+    JSR write_counted_string
+    JSR select_key
+    STA key_down
+    LXY msg_key_left
+    JSR write_counted_string
+    JSR select_key
+    STA key_left
+    LXY msg_key_right
+    JSR write_counted_string
+    JSR select_key
+    STA key_right
+    LXY msg_key_jump
+    JSR write_counted_string
+    JSR select_key
+    STA key_jump
+    RTS
+    .select_key
+    LDA #&79
+    LDX #&80
+    JSR osbyte
+    TXA
+    BPL not_shift
+    LDX #&00
+    JMP key_pressed
+    .not_shift
+    LDA #&79
+    LDX #&81
+    JSR osbyte
+    TXA
+    BPL not_ctrl
+    LDX #&01
+    JMP key_pressed
+    .not_ctrl
+    LDA #&7A
+    JSR osbyte
+    CPX #&FF
+    BEQ select_key
+    .key_pressed
+    STX param
+    TXA
+    EOR #&FF
+    STA &89
+    LDY key_press_bits
+    TXA
+    AND #&0F
+    STA &8B
+    TXA
+    AND #&F0
+    STA &8C
+    LDA #&00
+    STA &8D
+    STA &8E
+    .key_clash_loop
+    TXA
+    CMP current_score,Y
+    BEQ select_key
+    LDA current_score,Y
+    AND #&0F
+    CMP &8B
+    BNE lo_nibble_mismatch
+    INC &8D
+    .lo_nibble_mismatch
+    LDA current_score,Y
+    AND #&F0
+    CMP &8C
+    BNE hi_nibble_mismatch
+    INC &8E
+    .hi_nibble_mismatch
+    DEY
+    BPL key_clash_loop
+    LDA &8D
+    BEQ no_clash
+    LDA &8E
+    BEQ no_clash
+    LDA #&D6
+    LDX #&01
+    LDY #&00
+    JSR osbyte
+    LDA #&07
+    JSR oswrch
+    JMP select_key
+    .no_clash
+    INC key_press_bits
+    LDY key_press_bits
+    TXA
+    STA current_score,Y
+}
+
+.draw_key_name_impl
+{
+    CPX #&02
+    BCS not_shift_ctrl
+    CPX #&00
+    BNE not_shift
+    LXY key_name_shift
+    JMP write_name_load_result
+    .not_shift
+    LXY key_name_control
+    JMP write_name_load_result
+    .not_shift_ctrl
+    LDY param
+    LDA (sprite_lo),Y
+    CMP #&21
+    BCC not_ascii
+    CMP #&7F
+    BCS not_ascii
+    PHA
+    LDA #&27
+    JSR oswrch
+    PLA
+    JSR oswrch
+    LDA #&27
+    JSR oswrch
+    JMP load_result
+    .not_ascii
+    CMP #&00
+    BNE not_tab
+    LXY key_name_tab
+    JMP write_name_load_result
+    .not_tab
+    CMP #&01
+    BNE not_capslock
+    LXY key_name_capslock
+    JMP write_name_load_result
+    .not_capslock
+    CMP #&02
+    BNE not_shiftlock
+    LXY key_name_shiftlock
+    JMP write_name_load_result
+    .not_shiftlock
+    CMP #&1B
+    BNE not_escape
+    LXY key_name_escape
+    JMP write_name_load_result
+    .not_escape
+    CMP #&20
+    BNE not_space
+    LXY key_name_space
+    JMP write_name_load_result
+    .not_space
+    CMP #&7F
+    BNE not_delete
+    LXY key_name_delete
+    JMP write_name_load_result
+    .not_delete
+    CMP #&0D
+    BNE not_enter
+    LXY key_name_return
+    JMP write_name_load_result
+    .not_enter
+    CMP #&8B
+    BNE not_copy
+    LXY key_name_copy
+    JMP write_name_load_result
+    .not_copy
+    CMP #&8C
+    BNE not_left
+    LXY key_name_left
+    JMP write_name_load_result
+    .not_left
+    CMP #&8D
+    BNE not_right
+    LXY key_name_right
+    JMP write_name_load_result
+    .not_right
+    CMP #&8E
+    BNE not_down
+    LXY key_name_down
+    JMP write_name_load_result
+    .not_down
+    CMP #&8F
+    BNE not_up
+    LXY key_name_up
+    JMP write_name_load_result
+    .not_up
+    CMP #&80
+    BCC load_result
+    CMP #&8A
+    BCS load_result
+    PHA
+    LDA #&66
+    JSR oswrch
+    PLA
+    SEC
+    SBC #&50
+    JSR oswrch
+    JMP load_result
+    .write_name_load_result
+    JSR write_counted_string
+    .load_result
+    LDA &89
+    RTS
+}
+.msg_key_selection {
+    MSG_LENGTH
+    VDU_CLG
+    VDU_GCOL 0, 4
+    VDU_MOVE 480, 950
+    EQUS "K E Y"
+    VDU_MOVE 96, 850
+    EQUS "S E L E C T I O N"
+    VDU_GCOL 0, 2
+    .MSG_END
+}
+.msg_key_up {
+    MSG_LENGTH
+    VDU_MOVE 196, 700
+    EQUS "Up .. "
+    .MSG_END
+}
+.msg_key_down {
+    MSG_LENGTH
+    VDU_MOVE 64, 620
+    EQUS "Down .. "
+    .MSG_END
+}
+.msg_key_left {
+    MSG_LENGTH
+    VDU_MOVE 64, 540
+    EQUS "Left .. "
+    .MSG_END
+}
+.msg_key_right {
+    MSG_LENGTH
+    VDU_MOVE 0, 460
+    EQUS "Right .. "
+    .MSG_END
+}
+.msg_key_jump {
+    MSG_LENGTH
+    VDU_MOVE 64, 380
+    EQUS "Jump .. "
+    .MSG_END
+}
+.key_name_tab {
+    MSG_LENGTH
+    EQUS "Tab"
+    .MSG_END
+}
+.key_name_capslock {
+    MSG_LENGTH
+    EQUS "Caps Lock"
+    .MSG_END
+}
+.key_name_shiftlock {
+    MSG_LENGTH
+    EQUS "Shift Lock"
+    .MSG_END
+}
+.key_name_escape {
+    MSG_LENGTH
+    EQUS "Escape"
+    .MSG_END
+}
+.key_name_space {
+    MSG_LENGTH
+    EQUS "Space"
+    .MSG_END
+}
+.key_name_delete {
+    MSG_LENGTH
+    EQUS "Delete"
+    .MSG_END
+}
+.key_name_return {
+    MSG_LENGTH
+    EQUS "Return"
+    .MSG_END
+}
+.key_name_copy {
+    MSG_LENGTH
+    EQUS "Copy"
+    .MSG_END
+}
+.key_name_left {
+    MSG_LENGTH
+    EQUS "Left Arrow"
+    .MSG_END
+}
+.key_name_right {
+    MSG_LENGTH
+    EQUS "Right Arrow"
+    .MSG_END
+}
+.key_name_down {
+    MSG_LENGTH
+    EQUS "Down Arrow"
+    .MSG_END
+}
+.key_name_up {
+    MSG_LENGTH
+    EQUS "Up Arrow"
+    .MSG_END
+}
+.key_name_shift {
+    MSG_LENGTH
+    EQUS "Shift"
+    .MSG_END
+}
+.key_name_control {
+    MSG_LENGTH
+    EQUS "Control"
+    .MSG_END
+}
+
+.draw_key_selection
+{
+    LXY msg_key_display
+    JSR write_counted_string
+    LDA #&AC
+    LDX #&00
+    LDY #&FF
+    JSR osbyte
+    STX sprite_lo
+    STY sprite_hi
+    LXY msg_key_up
+    JSR write_counted_string
+    LDA key_up
+    JSR draw_key_name
+    LXY msg_key_down
+    JSR write_counted_string
+    LDA key_down
+    JSR draw_key_name
+    LXY msg_key_left
+    JSR write_counted_string
+    LDA key_left
+    JSR draw_key_name
+    LXY msg_key_right
+    JSR write_counted_string
+    LDA key_right
+    JSR draw_key_name
+    LXY msg_key_jump
+    JSR write_counted_string
+    LDA key_jump
+    JSR draw_key_name
+    LXY msg_standard_keys
+    JSR write_counted_string
+    RTS
+    .draw_key_name
+    EOR #&FF
+    TAX
+    STA param
+    JMP draw_key_name_impl
+    .msg_key_display {
+        MSG_LENGTH
+        VDU_MOVE 512, 800
+        VDU_GCOL 0, 4
+        EQUS "KEYS"
+        VDU_GCOL 0, 8
+        .MSG_END
+    }
+    .msg_standard_keys {
+        MSG_LENGTH
+        VDU_GCOL 0, 2
+        VDU_MOVE 64, 280
+        EQUS "Hold .. 'H'"
+        VDU_MOVE 0, 200
+        EQUS "Abort .. Escape +'H'"
+        .MSG_END
+    }
+}
+
+.harry_motion_noises
+{
+    LDA harry_dx
+    ORA harry_dy
+    BNE harry_moving
+    RTS
+    .harry_moving
+    LDA birds_timer_cycle
+    AND #&01
+    BEQ even_tick
+    RTS
+    .even_tick
+    LDA harry_state
+    BNE harry_not_on_ground
+    LDA #&64
+    JMP play_sound1
+    .harry_not_on_ground
+    CMP #&01
+    BNE harry_not_on_ladder
+    LDA #&96
+    JMP play_sound1
+    .harry_not_on_ladder
+    CMP #&02
+    BNE harry_not_jumping
+    LDA harry_fall_scaled_vy
+    CMP #&0B
+    BCC harry_jumping_upwards
+    LDA #&BE
+    SEC
+    SBC harry_fall_scaled_vy
+    SBC harry_fall_scaled_vy
+    JMP play_sound1
+    .harry_jumping_upwards
+    LDA #&96
+    CLC
+    ADC harry_fall_scaled_vy
+    ADC harry_fall_scaled_vy
+    JMP play_sound1
+    .harry_not_jumping
+    CMP #&03
+    BNE harry_not_falling
+    LDA #&6E
+    SEC
+    SBC harry_fall_scaled_vy
+    SBC harry_fall_scaled_vy
+    JMP play_sound1
+    .harry_not_falling
+    LDA harry_dx
+    BNE harry_moving_on_lift
+    RTS
+    .harry_moving_on_lift
+    LDA #&64
+    .play_sound1
+    STA sound1_pitch
+    LXY sound1
+    LDA #&07
+    JSR osword
+    RTS
+    .sound1
+    EQUB &13
+    EQUB &00
+    EQUB &01
+    EQUB &00
+    .sound1_pitch
+    EQUB &00
+    EQUB &00
+    EQUB &01
+    EQUB &00
+}
+.sound2
+EQUB &03
+EQUB &00
+EQUB &02
+EQUB &00
+.sound2_pitch
+EQUS "x"
+EQUB &00
+.sound2_duration
+EQUB &1E
+EQUB &00
+.sound3
+EQUB &10
+EQUB &00
+EQUB &03
+EQUB &00
+.sound3_pitch
+EQUB &00
+EQUB &00
+EQUB &04
+EQUB &00
+.sound4
+EQUB &10
+EQUB &00
+EQUB &01
+EQUB &00
+EQUB &04
+EQUB &00
+EQUB &01
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+.scenario_lookup_table
+EQUB &D0
+EQUB &0C
+EQUS ">"
+EQUB &0D
+EQUB &B2
+EQUB &0D
+EQUS "K"
+EQUB &0E
+EQUB &DC
+EQUB &0E
+EQUS "l"
+EQUB &0F
+EQUB &E8
+EQUB &0F
+EQUS "r"
+EQUB &10
+EQUB &0D
+EQUB &04
+EQUB &00
+EQUB &0A
+EQUB &02
+EQUB &01
+EQUB &00
+EQUB &13
+EQUB &06
+EQUB &01
+EQUB &12
+EQUB &0B
+EQUB &02
+EQUB &08
+EQUB &0B
+EQUB &0E
+EQUB &12
+EQUB &0C
+EQUB &09
+EQUB &0A
+EQUB &0D
+EQUB &0B
+EQUB &0C
+EQUB &0E
+EQUB &0D
+EQUB &0E
+EQUB &0F
+EQUB &0F
+EQUB &10
+EQUB &10
+EQUB &03
+EQUB &07
+EQUB &11
+EQUB &09
+EQUB &0B
+EQUB &15
+EQUB &05
+EQUB &09
+EQUB &15
+EQUB &0B
+EQUB &10
+EQUB &15
+EQUB &12
+EQUB &13
+EQUB &03
+EQUB &07
+EQUB &0D
+EQUB &07
+EQUB &02
+EQUB &17
+EQUB &0B
+EQUB &02
+EQUB &08
+EQUB &10
+EQUB &02
+EQUB &08
+EQUB &04
+EQUB &02
+EQUB &01
+EQUB &07
+EQUB &0D
+EQUB &07
+EQUB &12
+EQUB &07
+EQUB &02
+EQUB &0C
+EQUB &0A
+EQUB &0D
+EQUB &11
+EQUB &0C
+EQUB &04
+EQUB &11
+EQUB &0A
+EQUB &12
+EQUB &06
+EQUB &16
+EQUB &0D
+EQUB &16
+EQUB &13
+EQUB &16
+EQUB &02
+EQUB &02
+EQUB &0D
+EQUB &02
+EQUB &05
+EQUB &07
+EQUB &0E
+EQUB &07
+EQUB &05
+EQUB &0C
+EQUB &0F
+EQUB &0C
+EQUB &10
+EQUB &10
+EQUB &0B
+EQUB &12
+EQUB &09
+EQUB &16
+EQUB &0E
+EQUB &16
+EQUB &05
+EQUB &11
+EQUB &08
+EQUB &16
+EQUB &04
+EQUB &0C
+EQUB &06
+EQUB &07
+EQUB &0C
+EQUB &02
+EQUB &0D
+EQUB &08
+EQUB &00
+EQUB &07
+EQUB &03
+EQUB &01
+EQUB &00
+EQUB &03
+EQUB &01
+EQUB &05
+EQUB &13
+EQUB &06
+EQUB &00
+EQUB &06
+EQUB &06
+EQUB &08
+EQUB &0A
+EQUB &06
+EQUB &0C
+EQUB &0E
+EQUB &06
+EQUB &10
+EQUB &13
+EQUB &0B
+EQUB &00
+EQUB &03
+EQUB &0B
+EQUB &05
+EQUB &0E
+EQUB &0B
+EQUB &10
+EQUB &13
+EQUB &10
+EQUB &00
+EQUB &0A
+EQUB &10
+EQUB &0C
+EQUB &13
+EQUB &15
+EQUB &04
+EQUB &0A
+EQUB &15
+EQUB &0C
+EQUB &13
+EQUB &02
+EQUB &02
+EQUB &12
+EQUB &04
+EQUB &11
+EQUB &17
+EQUB &06
+EQUB &07
+EQUB &12
+EQUB &09
+EQUB &02
+EQUB &08
+EQUB &09
+EQUB &0C
+EQUB &17
+EQUB &0D
+EQUB &0C
+EQUB &12
+EQUB &11
+EQUB &02
+EQUB &0D
+EQUB &11
+EQUB &11
+EQUB &17
+EQUB &05
+EQUB &02
+EQUB &0C
+EQUB &02
+EQUB &00
+EQUB &07
+EQUB &04
+EQUB &07
+EQUB &0D
+EQUB &07
+EQUB &00
+EQUB &0C
+EQUB &07
+EQUB &0C
+EQUB &13
+EQUB &0C
+EQUB &07
+EQUB &11
+EQUB &07
+EQUB &16
+EQUB &0F
+EQUB &16
+EQUB &13
+EQUB &16
+EQUB &00
+EQUB &02
+EQUB &03
+EQUB &02
+EQUB &0F
+EQUB &02
+EQUB &10
+EQUB &07
+EQUB &00
+EQUB &11
+EQUB &0A
+EQUB &11
+EQUB &0C
+EQUB &16
+EQUB &06
+EQUB &16
+EQUB &01
+EQUB &02
+EQUB &12
+EQUB &0C
+EQUB &0B
+EQUB &0C
+EQUB &0D
+EQUB &16
+EQUB &18
+EQUB &07
+EQUB &01
+EQUB &0A
+EQUB &03
+EQUB &01
+EQUB &00
+EQUB &02
+EQUB &02
+EQUB &03
+EQUB &04
+EQUB &01
+EQUB &07
+EQUB &09
+EQUB &01
+EQUB &0B
+EQUB &13
+EQUB &05
+EQUB &0F
+EQUB &12
+EQUB &0A
+EQUB &00
+EQUB &04
+EQUB &0F
+EQUB &00
+EQUB &03
+EQUB &13
+EQUB &03
+EQUB &04
+EQUB &06
+EQUB &07
+EQUB &0A
+EQUB &06
+EQUB &0C
+EQUB &0C
+EQUB &07
+EQUB &0E
+EQUB &0E
+EQUB &08
+EQUB &0F
+EQUB &0F
+EQUB &09
+EQUB &11
+EQUB &11
+EQUB &0A
+EQUB &12
+EQUB &13
+EQUB &0C
+EQUB &0C
+EQUB &0D
+EQUB &0C
+EQUB &0F
+EQUB &0F
+EQUB &0F
+EQUB &12
+EQUB &13
+EQUB &10
+EQUB &11
+EQUB &11
+EQUB &11
+EQUB &0F
+EQUB &0F
+EQUB &12
+EQUB &0C
+EQUB &0D
+EQUB &13
+EQUB &07
+EQUB &0B
+EQUB &15
+EQUB &0D
+EQUB &0F
+EQUB &14
+EQUB &10
+EQUB &10
+EQUB &14
+EQUB &12
+EQUB &13
+EQUB &01
+EQUB &02
+EQUB &0C
+EQUB &03
+EQUB &0B
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &15
+EQUB &0A
+EQUB &07
+EQUB &15
+EQUB &0D
+EQUB &13
+EQUB &17
+EQUB &12
+EQUB &02
+EQUB &07
+EQUB &13
+EQUB &0B
+EQUB &11
+EQUB &05
+EQUB &04
+EQUB &03
+EQUB &0F
+EQUB &02
+EQUB &10
+EQUB &06
+EQUB &04
+EQUB &0B
+EQUB &04
+EQUB &14
+EQUB &09
+EQUB &07
+EQUB &0F
+EQUB &09
+EQUB &0F
+EQUB &0D
+EQUB &01
+EQUB &10
+EQUB &11
+EQUB &11
+EQUB &13
+EQUB &12
+EQUB &13
+EQUB &15
+EQUB &02
+EQUB &02
+EQUB &02
+EQUB &0B
+EQUB &07
+EQUB &07
+EQUB &07
+EQUB &14
+EQUB &00
+EQUB &10
+EQUB &0D
+EQUB &02
+EQUB &0C
+EQUB &13
+EQUB &0F
+EQUB &12
+EQUB &0D
+EQUB &0D
+EQUB &12
+EQUB &15
+EQUB &02
+EQUB &10
+EQUB &09
+EQUB &14
+EQUB &11
+EQUB &06
+EQUB &00
+EQUB &02
+EQUB &08
+EQUB &07
+EQUB &1A
+EQUB &05
+EQUB &01
+EQUB &06
+EQUB &04
+EQUB &01
+EQUB &00
+EQUB &04
+EQUB &01
+EQUB &06
+EQUB &0A
+EQUB &01
+EQUB &0D
+EQUB &13
+EQUB &06
+EQUB &00
+EQUB &04
+EQUB &06
+EQUB &07
+EQUB &0A
+EQUB &06
+EQUB &0D
+EQUB &11
+EQUB &05
+EQUB &13
+EQUB &13
+EQUB &0C
+EQUB &00
+EQUB &01
+EQUB &0D
+EQUB &03
+EQUB &03
+EQUB &0E
+EQUB &05
+EQUB &05
+EQUB &0F
+EQUB &07
+EQUB &08
+EQUB &0B
+EQUB &07
+EQUB &08
+EQUB &0B
+EQUB &0D
+EQUB &10
+EQUB &0A
+EQUB &12
+EQUB &13
+EQUB &10
+EQUB &08
+EQUB &0A
+EQUB &11
+EQUB &00
+EQUB &00
+EQUB &12
+EQUB &02
+EQUB &02
+EQUB &13
+EQUB &03
+EQUB &03
+EQUB &14
+EQUB &04
+EQUB &04
+EQUB &15
+EQUB &05
+EQUB &05
+EQUB &15
+EQUB &07
+EQUB &0A
+EQUB &10
+EQUB &0D
+EQUB &0E
+EQUB &10
+EQUB &10
+EQUB &10
+EQUB &10
+EQUB &12
+EQUB &13
+EQUB &15
+EQUB &0D
+EQUB &0F
+EQUB &15
+EQUB &11
+EQUB &13
+EQUB &03
+EQUB &02
+EQUB &08
+EQUB &08
+EQUB &02
+EQUB &17
+EQUB &0E
+EQUB &0C
+EQUB &17
+EQUB &0F
+EQUB &02
+EQUB &08
+EQUB &13
+EQUB &10
+EQUB &17
+EQUB &0B
+EQUB &00
+EQUB &02
+EQUB &00
+EQUB &0D
+EQUB &00
+EQUB &12
+EQUB &07
+EQUB &07
+EQUB &09
+EQUB &11
+EQUB &0D
+EQUB &02
+EQUB &10
+EQUB &07
+EQUB &0D
+EQUB &0C
+EQUB &13
+EQUB &0B
+EQUB &11
+EQUB &10
+EQUB &10
+EQUB &15
+EQUB &10
+EQUB &18
+EQUB &00
+EQUB &07
+EQUB &0A
+EQUB &02
+EQUB &12
+EQUB &02
+EQUB &05
+EQUB &0F
+EQUB &09
+EQUB &16
+EQUB &0D
+EQUB &16
+EQUB &0A
+EQUB &16
+EQUB &11
+EQUB &16
+EQUB &11
+EQUB &02
+EQUB &04
+EQUB &02
+EQUB &0A
+EQUB &07
+EQUB &11
+EQUB &09
+EQUB &01
+EQUB &0D
+EQUB &04
+EQUB &01
+EQUB &00
+EQUB &01
+EQUB &01
+EQUB &03
+EQUB &0B
+EQUB &01
+EQUB &0D
+EQUB &0F
+EQUB &01
+EQUB &12
+EQUB &13
+EQUB &06
+EQUB &00
+EQUB &05
+EQUB &06
+EQUB &09
+EQUB &0C
+EQUB &06
+EQUB &0E
+EQUB &0F
+EQUB &0B
+EQUB &00
+EQUB &05
+EQUB &0B
+EQUB &0A
+EQUB &0F
+EQUB &0B
+EQUB &13
+EQUB &13
+EQUB &10
+EQUB &00
+EQUB &05
+EQUB &15
+EQUB &03
+EQUB &07
+EQUB &14
+EQUB &09
+EQUB &09
+EQUB &13
+EQUB &0B
+EQUB &0D
+EQUB &12
+EQUB &0E
+EQUB &0E
+EQUB &16
+EQUB &0C
+EQUB &0F
+EQUB &15
+EQUB &12
+EQUB &13
+EQUB &03
+EQUB &02
+EQUB &08
+EQUB &02
+EQUB &0C
+EQUB &12
+EQUB &04
+EQUB &0C
+EQUB &17
+EQUB &07
+EQUB &02
+EQUB &07
+EQUB &07
+EQUB &0A
+EQUB &11
+EQUB &0A
+EQUB &02
+EQUB &08
+EQUB &0C
+EQUB &07
+EQUB &0D
+EQUB &0C
+EQUB &14
+EQUB &18
+EQUB &0E
+EQUB &02
+EQUB &08
+EQUB &10
+EQUB &00
+EQUB &02
+EQUB &00
+EQUB &07
+EQUB &00
+EQUB &0C
+EQUB &00
+EQUB &11
+EQUB &05
+EQUB &07
+EQUB &05
+EQUB &16
+EQUB &09
+EQUB &0B
+EQUB &0D
+EQUB &06
+EQUB &0B
+EQUB &14
+EQUB &0D
+EQUB &17
+EQUB &13
+EQUB &0C
+EQUB &13
+EQUB &16
+EQUB &04
+EQUB &02
+EQUB &05
+EQUB &02
+EQUB &06
+EQUB &02
+EQUB &0D
+EQUB &02
+EQUB &0F
+EQUB &02
+EQUB &12
+EQUB &02
+EQUB &0A
+EQUB &0C
+EQUB &0F
+EQUB &0C
+EQUB &03
+EQUB &16
+EQUB &06
+EQUB &16
+EQUB &07
+EQUB &16
+EQUB &0F
+EQUB &17
+EQUB &12
+EQUB &16
+EQUB &01
+EQUB &07
+EQUB &03
+EQUB &0C
+EQUB &01
+EQUB &11
+EQUB &0E
+EQUB &0C
+EQUB &0F
+EQUB &07
+EQUB &10
+EQUB &06
+EQUB &01
+EQUB &09
+EQUB &04
+EQUB &01
+EQUB &00
+EQUB &02
+EQUB &01
+EQUB &06
+EQUB &08
+EQUB &01
+EQUB &0B
+EQUB &0E
+EQUB &06
+EQUB &00
+EQUB &01
+EQUB &06
+EQUB &03
+EQUB &05
+EQUB &06
+EQUB &0C
+EQUB &0E
+EQUB &0B
+EQUB &02
+EQUB &07
+EQUB &0B
+EQUB &0C
+EQUB &11
+EQUB &0A
+EQUB &11
+EQUB &13
+EQUB &10
+EQUB &00
+EQUB &05
+EQUB &10
+EQUB &10
+EQUB &13
+EQUB &15
+EQUB &06
+EQUB &06
+EQUB &15
+EQUB &08
+EQUB &08
+EQUB &14
+EQUB &0C
+EQUB &11
+EQUB &16
+EQUB &11
+EQUB &13
+EQUB &02
+EQUB &11
+EQUB &11
+EQUB &00
+EQUB &02
+EQUB &08
+EQUB &04
+EQUB &04
+EQUB &12
+EQUB &0E
+EQUB &07
+EQUB &0D
+EQUB &0E
+EQUB &13
+EQUB &17
+EQUB &11
+EQUB &02
+EQUB &0D
+EQUB &11
+EQUB &10
+EQUB &18
+EQUB &09
+EQUB &02
+EQUB &02
+EQUB &10
+EQUB &02
+EQUB &05
+EQUB &07
+EQUB &0C
+EQUB &07
+EQUB &0C
+EQUB &0C
+EQUB &10
+EQUB &0C
+EQUB &07
+EQUB &11
+EQUB &03
+EQUB &15
+EQUB &06
+EQUB &16
+EQUB &0C
+EQUB &15
+EQUB &13
+EQUB &11
+EQUB &13
+EQUB &17
+EQUB &0B
+EQUB &02
+EQUB &0C
+EQUB &02
+EQUB &0D
+EQUB &02
+EQUB &0E
+EQUB &02
+EQUB &00
+EQUB &11
+EQUB &02
+EQUB &11
+EQUB &03
+EQUB &11
+EQUB &07
+EQUB &0C
+EQUB &13
+EQUB &0B
+EQUB &01
+EQUB &11
+EQUB &01
+EQUB &02
+EQUB &12
+EQUB &11
+EQUB &0D
+EQUB &07
+EQUB &12
+EQUB &0B
+EQUB &17
+EQUB &07
+EQUB &01
+EQUB &04
+EQUB &03
+EQUB &15
+EQUB &0B
+EQUB &10
+EQUB &10
+EQUB &00
+EQUB &04
+EQUB &10
+EQUB &06
+EQUB &07
+EQUB &0B
+EQUB &00
+EQUB &02
+EQUB &06
+EQUB &01
+EQUB &03
+EQUB &04
+EQUB &00
+EQUB &01
+EQUB &01
+EQUB &03
+EQUB &04
+EQUB &02
+EQUB &05
+EQUB &06
+EQUB &01
+EQUB &07
+EQUB &08
+EQUB &02
+EQUB &09
+EQUB &09
+EQUB &03
+EQUB &09
+EQUB &09
+EQUB &03
+EQUB &0C
+EQUB &0C
+EQUB &08
+EQUB &05
+EQUB &08
+EQUB &09
+EQUB &05
+EQUB &05
+EQUB &0A
+EQUB &05
+EQUB &05
+EQUB &0B
+EQUB &05
+EQUB &05
+EQUB &0C
+EQUB &05
+EQUB &05
+EQUB &0B
+EQUB &08
+EQUB &08
+EQUB &0C
+EQUB &08
+EQUB &08
+EQUB &0F
+EQUB &0C
+EQUB &0F
+EQUB &0B
+EQUB &0A
+EQUB &0B
+EQUB &09
+EQUB &0E
+EQUB &10
+EQUB &02
+EQUB &0F
+EQUB &10
+EQUB &01
+EQUB &02
+EQUB &12
+EQUB &03
+EQUB &02
+EQUB &08
+EQUB &05
+EQUB &14
+EQUB &18
+EQUB &07
+EQUB &14
+EQUB &18
+EQUB &09
+EQUB &14
+EQUB &18
+EQUB &0D
+EQUB &10
+EQUB &17
+EQUB &0F
+EQUB &0A
+EQUB &11
+EQUB &12
+EQUB &06
+EQUB &17
+EQUB &08
+EQUB &17
+EQUB &0A
+EQUB &17
+EQUB &0F
+EQUB &16
+EQUB &07
+EQUB &11
+EQUB &02
+EQUB &03
+EQUB &07
+EQUB &09
+EQUB &0B
+EQUB &0C
+EQUB &10
+EQUB &0F
+EQUB &10
+EQUB &0A
+EQUB &0C
+EQUB &04
+EQUB &11
+EQUB &02
+EQUB &02
+EQUB &07
+EQUB &03
+EQUB &11
+EQUB &08
+EQUB &09
+EQUB &0C
+EQUB &16
+EQUB &0D
+EQUB &16
+EQUB &01
+EQUB &11
+EQUB &0E
+EQUB &0A
+EQUB &00
+EQUB &05
+EQUB &02
+EQUB &0C
+EQUB &0F
+EQUB &06
+EQUB &00
+EQUB &10
+EQUB &03
+EQUB &01
+EQUB &00
+EQUB &13
+EQUB &06
+EQUB &02
+EQUB &04
+EQUB &06
+EQUB &07
+EQUB &0D
+EQUB &06
+EQUB &10
+EQUB &12
+EQUB &0B
+EQUB &02
+EQUB &05
+EQUB &0B
+EQUB &08
+EQUB &0C
+EQUB &0B
+EQUB &0F
+EQUB &12
+EQUB &10
+EQUB &03
+EQUB &06
+EQUB &10
+EQUB &09
+EQUB &0B
+EQUB &10
+EQUB &0E
+EQUB &11
+EQUB &15
+EQUB &03
+EQUB &03
+EQUB &15
+EQUB &06
+EQUB &06
+EQUB &15
+EQUB &08
+EQUB &0C
+EQUB &15
+EQUB &0E
+EQUB &0E
+EQUB &15
+EQUB &11
+EQUB &11
+EQUB &03
+EQUB &02
+EQUB &08
+EQUB &11
+EQUB &02
+EQUB &08
+EQUB &0A
+EQUB &07
+EQUB &0D
+EQUB &04
+EQUB &0C
+EQUB &12
+EQUB &10
+EQUB &0C
+EQUB &12
+EQUB &0A
+EQUB &11
+EQUB &17
+EQUB &05
+EQUB &06
+EQUB &0F
+EQUB &06
+EQUB &06
+EQUB &0B
+EQUB &0E
+EQUB &0B
+EQUB &08
+EQUB &10
+EQUB &0C
+EQUB &10
+EQUB &05
+EQUB &15
+EQUB &0F
+EQUB &15
+EQUB &07
+EQUB &15
+EQUB &0D
+EQUB &15
+EQUB &03
+EQUB &18
+EQUB &11
+EQUB &18
+EQUB &01
+EQUB &02
+EQUB &02
+EQUB &02
+EQUB &04
+EQUB &02
+EQUB &05
+EQUB &02
+EQUB &06
+EQUB &02
+EQUB &08
+EQUB &02
+EQUB &09
+EQUB &02
+EQUB &0A
+EQUB &02
+EQUB &0B
+EQUB &02
+EQUB &0C
+EQUB &02
+EQUB &0D
+EQUB &02
+EQUB &0E
+EQUB &02
+EQUB &0F
+EQUB &02
+EQUB &10
+EQUB &02
+EQUB &12
+EQUB &02
+EQUB &13
+EQUB &02
+EQUB &11
+EQUB &02
+EQUB &0A
+EQUB &0C
+EQUB &0A
+EQUB &16
+EQUB &03
+EQUB &11
+EQUB &11
+EQUB &11
+EQUS "UB(4): E"
+.sprite_lookup_table
+EQUB &96
+EQUB &18
+EQUB &00
+EQUS "6"
+EQUB &08
+EQUB &08
+EQUB &00
+EQUB &12
+EQUB &08
+EQUB &08
+EQUB &08
+EQUB &12
+EQUB &08
+EQUB &08
+EQUB &10
+EQUB &12
+EQUB &08
+EQUB &08
+EQUB &18
+EQUB &12
+EQUB &10
+EQUB &04
+EQUS " "
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "("
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "8"
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "H"
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "X"
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "h"
+EQUB &12
+EQUB &08
+EQUB &10
+EQUS "x"
+EQUB &12
+EQUB &08
+EQUB &10
+EQUB &88
+EQUB &12
+EQUB &08
+EQUB &12
+EQUB &98
+EQUB &12
+EQUB &08
+EQUB &12
+EQUB &AA
+EQUB &12
+EQUB &10
+EQUB &18
+EQUB &BC
+EQUB &12
+EQUB &10
+EQUB &18
+EQUB &EC
+EQUB &12
+EQUB &10
+EQUB &18
+EQUB &1C
+EQUB &13
+EQUB &10
+EQUB &18
+EQUS "L"
+EQUB &13
+EQUB &18
+EQUS "0|"
+EQUB &13
+EQUB &18
+EQUS "0"
+EQUB &0C
+EQUB &14
+EQUB &08
+EQUB &14
+EQUB &9C
+EQUB &14
+EQUB &08
+EQUB &14
+EQUB &B0
+EQUB &14
+EQUB &08
+EQUB &14
+EQUB &C4
+EQUB &14
+EQUB &08
+EQUB &14
+EQUB &D8
+EQUB &14
+EQUB &08
+EQUB &14
+EQUB &EC
+EQUB &14
+EQUB &08
+EQUB &16
+EQUB &00
+EQUB &15
+EQUB &10
+EQUB &14
+EQUB &16
+EQUB &15
+EQUB &10
+EQUB &14
+EQUS ">"
+EQUB &15
+EQUB &10
+EQUB &14
+EQUS "f"
+EQUB &15
+EQUB &10
+EQUB &14
+EQUB &8E
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &B6
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &BD
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &C4
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &CB
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &D2
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &D9
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &E0
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &E7
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &EE
+EQUB &15
+EQUB &08
+EQUB &07
+EQUB &F5
+EQUB &15
+EQUB &18
+EQUB &09
+EQUB &FC
+EQUB &15
+EQUS " "
+EQUB &09
+EQUB &17
+EQUB &16
+EQUS " "
+EQUB &09
+EQUS ";"
+EQUB &16
+EQUS "("
+EQUB &09
+EQUS "_"
+EQUB &16
+EQUS "0"
+EQUB &09
+EQUB &8C
+EQUB &16
+EQUS "("
+EQUB &09
+EQUB &C2
+EQUB &16
+EQUB &08
+EQUB &03
+EQUB &EF
+EQUB &16
+EQUB &10
+EQUB &1E
+EQUB &F2
+EQUB &16
+EQUB &10
+EQUB &1E
+EQUS "."
+EQUB &17
+EQUB &10
+EQUB &1E
+EQUS "j"
+EQUB &17
+EQUB &10
+EQUB &1E
+EQUB &A6
+EQUB &17
+EQUB &10
+EQUB &1E
+EQUB &E2
+EQUB &17
+EQUB &10
+EQUB &1E
+EQUB &1E
+EQUB &18
+EQUB &10
+EQUB &1E
+EQUS "Z"
+EQUB &18
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+.bmp_wall
+EQUB &FB
+EQUB &00
+EQUB &BF
+EQUB &00
+EQUB &EF
+EQUB &00
+EQUB &00
+EQUB &00
+.bmp_ladder
+EQUS "BBBB~BBB"
+.bmp_egg
+EQUB &00
+EQUS "8l^~|8"
+EQUB &00
+.bmp_grain
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &08
+EQUB &14
+EQUS "*U"
+EQUB &00
+EQUB &1F
+EQUB &F8
+EQUB &1F
+EQUB &F8
+EQUB &1B
+EQUB &D8
+EQUB &11
+EQUB &88
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "4<"
+EQUB &10
+EQUB &18
+EQUS "<nnnn<"
+EQUB &18
+EQUB &10
+EQUB &18
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "4<"
+EQUB &10
+EQUB &18
+EQUS "<nnvv<8J$"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "4<"
+EQUB &10
+EQUB &18
+EQUS "<nn^^<8J$"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS ",<"
+EQUB &08
+EQUB &18
+EQUS "<vvvv<"
+EQUB &18
+EQUB &08
+EQUB &18
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS ",<"
+EQUB &08
+EQUB &18
+EQUS "<vvnn<"
+EQUB &1C
+EQUS "R$"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS ",<"
+EQUB &08
+EQUB &18
+EQUS "<vvzz<"
+EQUB &1C
+EQUS "R$"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "<<"
+EQUB &18
+EQUB &18
+EQUB &BD
+EQUB &FF
+EQUS "~~~<$$f"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "<="
+EQUB &19
+EQUB &19
+EQUS "="
+EQUB &FF
+EQUB &FE
+EQUB &FE
+EQUB &FE
+EQUB &BC
+EQUS ">   `"
+EQUB &18
+EQUS "<"
+EQUB &FF
+EQUS "<"
+EQUB &BC
+EQUB &98
+EQUB &98
+EQUB &BC
+EQUB &FF
+EQUB &7F
+EQUB &7F
+EQUB &7F
+EQUS "=|"
+EQUB &04
+EQUB &04
+EQUB &04
+EQUB &06
+EQUB &00
+EQUS "p"
+EQUB &00
+EQUB &F8
+EQUB &01
+EQUB &E8
+EQUB &01
+EQUB &EF
+EQUB &01
+EQUB &FF
+EQUB &01
+EQUB &F8
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &E0
+EQUB &00
+EQUS "`"
+EQUB &0E
+EQUS "p"
+EQUB &1F
+EQUS "p?"
+EQUB &F8
+EQUB &7F
+EQUB &F8
+EQUB &FF
+EQUS "x"
+EQUB &FF
+EQUB &B8
+EQUB &BF
+EQUB &BC
+EQUB &BF
+EQUB &BC
+EQUB &DF
+EQUB &BC
+EQUS "o|v"
+EQUB &FC
+EQUS "9"
+EQUB &F8
+EQUB &1F
+EQUB &F8
+EQUB &0F
+EQUB &F0
+EQUB &03
+EQUB &E0
+EQUB &00
+EQUS "p"
+EQUB &00
+EQUB &F9
+EQUB &01
+EQUB &EA
+EQUB &01
+EQUB &EC
+EQUB &01
+EQUB &FC
+EQUB &01
+EQUB &FA
+EQUB &00
+EQUB &F1
+EQUB &00
+EQUB &E0
+EQUB &00
+EQUS "`"
+EQUB &0E
+EQUS "p"
+EQUB &1F
+EQUS "p?"
+EQUB &F8
+EQUS "q"
+EQUB &F8
+EQUB &EE
+EQUS "x"
+EQUB &DF
+EQUB &B8
+EQUB &BF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUS "?"
+EQUB &F8
+EQUB &1F
+EQUB &F8
+EQUB &0F
+EQUB &F0
+EQUB &03
+EQUB &E0
+EQUB &0E
+EQUB &00
+EQUB &1F
+EQUB &00
+EQUB &17
+EQUB &80
+EQUB &F7
+EQUB &80
+EQUB &FF
+EQUB &80
+EQUB &1F
+EQUB &80
+EQUB &0F
+EQUB &00
+EQUB &07
+EQUB &00
+EQUB &06
+EQUB &00
+EQUB &0E
+EQUS "p"
+EQUB &0E
+EQUB &F8
+EQUB &1F
+EQUB &FC
+EQUB &1F
+EQUB &FE
+EQUB &1E
+EQUB &FF
+EQUB &1D
+EQUB &FF
+EQUS "="
+EQUB &FD
+EQUS "="
+EQUB &FD
+EQUS "="
+EQUB &FB
+EQUS ">"
+EQUB &F6
+EQUS "?n"
+EQUB &1F
+EQUB &9C
+EQUB &1F
+EQUB &F8
+EQUB &0F
+EQUB &F0
+EQUB &07
+EQUB &C0
+EQUB &0E
+EQUB &00
+EQUB &9F
+EQUB &00
+EQUS "W"
+EQUB &80
+EQUS "7"
+EQUB &80
+EQUS "?"
+EQUB &80
+EQUS "_"
+EQUB &80
+EQUB &8F
+EQUB &00
+EQUB &07
+EQUB &00
+EQUB &06
+EQUB &00
+EQUB &0E
+EQUS "p"
+EQUB &0E
+EQUB &F8
+EQUB &1F
+EQUB &FC
+EQUB &1F
+EQUB &8E
+EQUB &1E
+EQUS "w"
+EQUB &1D
+EQUB &FB
+EQUS "?"
+EQUB &FD
+EQUS "?"
+EQUB &FF
+EQUS "?"
+EQUB &FF
+EQUS "?"
+EQUB &FE
+EQUS "?"
+EQUB &FE
+EQUB &1F
+EQUB &FC
+EQUB &1F
+EQUB &F8
+EQUB &0F
+EQUB &F0
+EQUB &07
+EQUB &C0
+EQUB &00
+EQUS "8"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "8"
+EQUB &00
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &00
+EQUB &FE
+EQUB &00
+EQUB &03
+EQUS "}"
+EQUB &80
+EQUB &0C
+EQUB &D6
+EQUS "`"
+EQUB &11
+EQUS "U"
+EQUB &10
+EQUB &22
+EQUS "T"
+EQUB &88
+EQUS "$"
+EQUB &92
+EQUS "HD"
+EQUB &92
+EQUS "DH"
+EQUB &92
+EQUS "$"
+EQUB &88
+EQUB &92
+EQUB &22
+EQUB &89
+EQUB &11
+EQUB &22
+EQUB &D1
+EQUB &10
+EQUB &16
+EQUB &B1
+EQUB &10
+EQUB &0A
+EQUB &99
+EQUB &00
+EQUB &02
+EQUB &97
+EQUB &00
+EQUB &02
+EQUB &91
+EQUB &E0
+EQUB &02
+EQUB &91
+EQUB &00
+EQUB &02
+EQUB &91
+EQUB &10
+EQUB &02
+EQUB &91
+EQUB &10
+EQUB &12
+EQUB &91
+EQUB &10
+EQUB &12
+EQUB &91
+EQUB &10
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &D0
+EQUB &00
+EQUB &16
+EQUB &B0
+EQUB &00
+EQUB &1A
+EQUB &90
+EQUB &00
+EQUS "2"
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &90
+EQUB &00
+EQUB &12
+EQUB &91
+EQUB &00
+EQUB &12
+EQUB &91
+EQUB &01
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &D1
+EQUB &11
+EQUB &12
+EQUS "Q"
+EQUB &11
+EQUB &14
+EQUS "1"
+EQUB &11
+EQUB &18
+EQUB &19
+EQUB &11
+EQUS "0"
+EQUB &07
+EQUB &11
+EQUB &C0
+EQUB &00
+EQUB &FE
+EQUB &00
+EQUB &00
+EQUS "8"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "D"
+EQUB &00
+EQUB &00
+EQUS "8"
+EQUB &00
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &00
+EQUB &FE
+EQUB &00
+EQUB &03
+EQUS "}"
+EQUB &80
+EQUB &0C
+EQUB &D6
+EQUS "`"
+EQUB &11
+EQUS "U"
+EQUB &10
+EQUB &22
+EQUS "T"
+EQUB &88
+EQUS "$"
+EQUB &92
+EQUS "HD"
+EQUB &92
+EQUS "DH"
+EQUB &92
+EQUS "$"
+EQUB &88
+EQUB &92
+EQUB &22
+EQUB &89
+EQUB &11
+EQUB &22
+EQUB &D1
+EQUB &11
+EQUB &16
+EQUB &B1
+EQUB &11
+EQUB &1A
+EQUB &99
+EQUB &11
+EQUS "2"
+EQUB &97
+EQUB &11
+EQUB &D2
+EQUB &91
+EQUB &FF
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &D1
+EQUB &11
+EQUB &16
+EQUB &B1
+EQUB &11
+EQUB &1A
+EQUB &99
+EQUB &11
+EQUS "2"
+EQUB &97
+EQUB &11
+EQUB &D2
+EQUB &91
+EQUB &FF
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &91
+EQUB &11
+EQUB &12
+EQUB &D1
+EQUB &11
+EQUB &12
+EQUS "Q"
+EQUB &11
+EQUB &14
+EQUS "1"
+EQUB &11
+EQUB &18
+EQUB &19
+EQUB &11
+EQUS "0"
+EQUB &07
+EQUB &11
+EQUB &C0
+EQUB &00
+EQUB &FE
+EQUB &00
+EQUB &0C
+EQUB &1B
+EQUB &1C
+EQUB &08
+EQUB &08
+EQUB &04
+EQUB &04
+EQUB &02
+EQUS "2{"
+EQUB &7F
+EQUB &7F
+EQUB &7F
+EQUS ">"
+EQUB &18
+EQUB &10
+EQUB &10
+EQUB &10
+EQUB &10
+EQUB &18
+EQUB &0D
+EQUB &1A
+EQUB &1D
+EQUB &08
+EQUB &08
+EQUB &04
+EQUB &04
+EQUB &02
+EQUS "2{"
+EQUB &7F
+EQUB &7F
+EQUB &7F
+EQUS ">"
+EQUB &18
+EQUS "((DE"
+EQUB &22
+EQUS "0"
+EQUB &D8
+EQUS "8"
+EQUB &10
+EQUB &10
+EQUS "  @L"
+EQUB &DE
+EQUB &FE
+EQUB &FE
+EQUB &FE
+EQUS "|"
+EQUB &18
+EQUB &08
+EQUB &08
+EQUB &08
+EQUB &08
+EQUB &18
+EQUB &B0
+EQUS "X"
+EQUB &B8
+EQUB &10
+EQUB &10
+EQUS "  @L"
+EQUB &DE
+EQUB &FE
+EQUB &FE
+EQUB &FE
+EQUS "|"
+EQUB &18
+EQUB &14
+EQUB &14
+EQUB &22
+EQUB &A2
+EQUS "D"
+EQUB &18
+EQUS "<<<"
+EQUB &18
+EQUB &18
+EQUB &18
+EQUS "<~~~~~<<$$& `"
+EQUB &18
+EQUS "<<<"
+EQUB &18
+EQUB &18
+EQUB &18
+EQUS "<~~~~~<<$$d"
+EQUB &04
+EQUB &04
+EQUB &04
+EQUB &06
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUS "80(xx|"
+EQUB &C4
+EQUB &7F
+EQUB &C2
+EQUB &7F
+EQUB &80
+EQUS "?"
+EQUB &00
+EQUS "?"
+EQUB &00
+EQUB &1F
+EQUB &00
+EQUB &16
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &18
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUS "0"
+EQUB &00
+EQUS "x"
+EQUB &00
+EQUS "|"
+EQUB &00
+EQUS "~"
+EQUB &00
+EQUB &7F
+EQUB &F8
+EQUS "?"
+EQUB &F4
+EQUS "?"
+EQUB &14
+EQUB &1F
+EQUB &08
+EQUB &16
+EQUB &08
+EQUB &10
+EQUB &08
+EQUB &10
+EQUB &00
+EQUB &10
+EQUB &00
+EQUB &18
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &1C
+EQUB &00
+EQUB &14
+EQUB &0C
+EQUB &1E
+EQUB &1E
+EQUS "#>C"
+EQUB &FE
+EQUB &01
+EQUB &FE
+EQUB &00
+EQUB &FC
+EQUB &00
+EQUB &FC
+EQUB &00
+EQUB &F8
+EQUB &00
+EQUS "h"
+EQUB &00
+EQUB &08
+EQUB &00
+EQUB &08
+EQUB &00
+EQUB &08
+EQUB &00
+EQUB &18
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &0C
+EQUB &00
+EQUB &1E
+EQUB &00
+EQUS ">"
+EQUB &00
+EQUS "~"
+EQUB &1F
+EQUB &FE
+EQUS "/"
+EQUB &FC
+EQUS "("
+EQUB &FC
+EQUB &10
+EQUB &F8
+EQUB &10
+EQUS "h"
+EQUB &10
+EQUB &08
+EQUB &00
+EQUB &08
+EQUB &00
+EQUB &08
+EQUB &00
+EQUB &18
+EQUS "`"
+EQUB &90
+EQUB &90
+EQUB &90
+EQUB &90
+EQUB &90
+EQUS "` `    p`"
+EQUB &90
+EQUB &10
+EQUS " @"
+EQUB &80
+EQUB &F0
+EQUS "`"
+EQUB &90
+EQUB &10
+EQUS " "
+EQUB &10
+EQUB &90
+EQUS "`"
+EQUB &80
+EQUB &80
+EQUB &A0
+EQUB &A0
+EQUB &F0
+EQUS "  "
+EQUB &F0
+EQUB &80
+EQUB &E0
+EQUB &10
+EQUB &10
+EQUB &90
+EQUS "``"
+EQUB &90
+EQUB &80
+EQUB &E0
+EQUB &90
+EQUB &90
+EQUS "`"
+EQUB &F0
+EQUB &10
+EQUB &10
+EQUS "  @@`"
+EQUB &90
+EQUB &90
+EQUS "`"
+EQUB &90
+EQUB &90
+EQUS "``"
+EQUB &90
+EQUB &90
+EQUS "p"
+EQUB &10
+EQUB &90
+EQUS "`"
+EQUB &FF
+EQUB &FF
+EQUB &F8
+EQUB &88
+EQUB &89
+EQUB &88
+EQUB &BB
+EQUB &AA
+EQUB &B8
+EQUB &BB
+EQUB &AA
+EQUB &B8
+EQUB &8B
+EQUB &A9
+EQUB &98
+EQUB &EB
+EQUB &AA
+EQUB &B8
+EQUB &EB
+EQUB &AA
+EQUB &B8
+EQUB &88
+EQUB &8A
+EQUB &88
+EQUB &FF
+EQUB &FF
+EQUB &F8
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FE
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &9B
+EQUB &DA
+EQUB &89
+EQUB &FF
+EQUB &AB
+EQUB &AA
+EQUB &BA
+EQUB &FF
+EQUB &AB
+EQUB &AA
+EQUB &BA
+EQUB &FF
+EQUB &9B
+EQUB &8D
+EQUB &99
+EQUB &FF
+EQUB &BB
+EQUB &AD
+EQUB &BA
+EQUB &FF
+EQUB &BB
+EQUB &AD
+EQUB &BA
+EQUB &FF
+EQUB &B8
+EQUB &AD
+EQUB &8A
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FC
+EQUB &B8
+EQUB &A8
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &BB
+EQUB &AB
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &BB
+EQUB &AB
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &B9
+EQUB &A9
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &BB
+EQUB &AB
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &BB
+EQUB &DB
+EQUB &BF
+EQUB &FF
+EQUB &FC
+EQUB &88
+EQUB &D8
+EQUB &8F
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &98
+EQUB &B5
+EQUS "G"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &AA
+EQUB &95
+EQUS "_"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &AA
+EQUB &95
+EQUS "_"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &9A
+EQUB &A5
+EQUS "G"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &AA
+EQUB &A5
+EQUS "w"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &AA
+EQUB &B5
+EQUS "w"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &98
+EQUB &B4
+EQUS "G"
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &8A
+EQUS "H"
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUS "K"
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUB &AB
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUB &A9
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUB &AB
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUB &EB
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &DA
+EQUB &E8
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &FF
+EQUB &C0
+EQUS "@"
+EQUB &E0
+EQUB &00
+EQUB &03
+EQUB &80
+EQUB &0F
+EQUB &E0
+EQUB &1F
+EQUB &F0
+EQUB &1F
+EQUB &F8
+EQUS "?"
+EQUB &F8
+EQUS "?"
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUS "~||8"
+EQUB &F8
+EQUB &18
+EQUB &F8
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F8
+EQUB &00
+EQUB &F8
+EQUB &18
+EQUS "|8~|"
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUS "?"
+EQUB &FC
+EQUS "?"
+EQUB &F8
+EQUB &1F
+EQUB &F8
+EQUB &1F
+EQUB &F0
+EQUB &0F
+EQUB &E0
+EQUB &03
+EQUB &80
+EQUS "`"
+EQUB &18
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<`"
+EQUB &18
+EQUS "`"
+EQUB &18
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F0
+EQUS "<"
+EQUB &F8
+EQUS "|"
+EQUB &FC
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &7F
+EQUB &F8
+EQUB &7F
+EQUB &F8
+EQUS "?"
+EQUB &F0
+EQUS "`"
+EQUB &10
+EQUB &F0
+EQUS "8"
+EQUB &F0
+EQUS "8"
+EQUB &F0
+EQUS "|"
+EQUB &F0
+EQUS "|"
+EQUB &F0
+EQUB &FC
+EQUB &F0
+EQUB &FC
+EQUB &F1
+EQUB &F8
+EQUB &F1
+EQUB &F8
+EQUB &F3
+EQUB &F0
+EQUB &F3
+EQUB &F0
+EQUB &F7
+EQUB &E0
+EQUB &FF
+EQUB &E0
+EQUB &FF
+EQUB &C0
+EQUB &FF
+EQUB &80
+EQUB &FF
+EQUB &C0
+EQUB &FF
+EQUB &C0
+EQUB &FF
+EQUB &E0
+EQUB &FF
+EQUB &E0
+EQUB &F3
+EQUB &F0
+EQUB &F3
+EQUB &F0
+EQUB &F1
+EQUB &F8
+EQUB &F1
+EQUB &F8
+EQUB &F0
+EQUB &FC
+EQUB &F0
+EQUB &FC
+EQUB &F0
+EQUS "|"
+EQUB &F0
+EQUS "|"
+EQUB &F0
+EQUS "8"
+EQUB &F0
+EQUS "8`"
+EQUB &10
+EQUB &7F
+EQUB &F8
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &7F
+EQUB &F8
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &07
+EQUB &80
+EQUB &7F
+EQUB &F8
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &7F
+EQUB &F8
+EQUS "?"
+EQUB &F8
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &F8
+EQUB &F8
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &FF
+EQUB &E0
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &F0
+EQUB &FF
+EQUB &E0
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F8
+EQUB &00
+EQUB &FF
+EQUB &F8
+EQUB &FF
+EQUB &FC
+EQUB &FF
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUS "?"
+EQUB &F8
+EQUB &03
+EQUB &80
+EQUB &0F
+EQUB &E0
+EQUB &1F
+EQUB &F0
+EQUB &1F
+EQUB &F8
+EQUS "?"
+EQUB &F8
+EQUS "?"
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUB &7F
+EQUB &FC
+EQUS "~||8"
+EQUB &F8
+EQUB &18
+EQUB &F8
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &00
+EQUB &F0
+EQUB &F8
+EQUB &F0
+EQUB &F8
+EQUB &F8
+EQUB &FC
+EQUB &F8
+EQUS "||<~<"
+EQUB &7F
+EQUS "|"
+EQUB &7F
+EQUB &FC
+EQUS "?"
+EQUB &FC
+EQUS "?"
+EQUB &FC
+EQUB &1F
+EQUB &FC
+EQUB &1F
+EQUB &F8
+EQUB &0F
+EQUB &F8
+EQUB &03
+EQUB &F0
+EQUS " "
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &0D
+EQUB &FF
+
+.draw_sprite
+{
+    LDA screen_col_offset
+    STA &81
+    LDY #&00
+    LDA sprite_width_bytes
+    STA &87
+    LDX #&00
+    LDA (sprite_lo,X)
+    STA &84
+    LDA #&08
+    STA &83
+    LDA sprite_colour_mask_left
+    LDX &81
+    BEQ colour_screen_aligned
+    .colour_screen_align_loop
+    LSR A
+    DEX
+    BNE colour_screen_align_loop
+    .colour_screen_aligned
+    STA &82
+    LDA #&02
+    SEC
+    SBC &81
+    STA &81
+    LDX #&00
+    .pixel_loop
+    ASL &84
+    BCC pixel_clear
+    LDA (screen_lo),Y
+    EOR &82
+    STA (screen_lo),Y
+    .pixel_clear
+    DEC &83
+    BNE source_byte_live
+    INC sprite_lo
+    BNE sprite_no_carry
+    INC sprite_hi
+    .sprite_no_carry
+    DEC &87
+    BEQ row_finished
+    LDA (sprite_lo,X)
+    STA &84
+    LDA #&08
+    STA &83
+    .source_byte_live
+    LSR &82
+    DEC &81
+    BNE pixel_loop
+    TYA
+    CLC
+    ADC #&08
+    TAY
+    LDA sprite_colour_mask_left
+    STA &82
+    LDA #&02
+    STA &81
+    JMP pixel_loop
+    .row_finished
+    DEC sprite_height
+    BEQ sprite_finished
+    JSR next_screen_line
+    JMP draw_sprite
+    .sprite_finished
+    RTS
+    .next_screen_line
+    INC screen_row_offset
+    LDA screen_row_offset
+    AND #&07
+    BEQ next_screen_row
+    INC screen_lo
+    RTS
+    .next_screen_row
+    STA screen_row_offset
+    CLC
+    LDA screen_lo
+    ADC #&79
+    STA screen_lo
+    LDA screen_hi
+    ADC #&02
+    STA screen_hi
+    RTS
+}
+
+.calculate_screen_location
+{
+    LDA #&00
+    STA screen_hi
+    STA &74
+    TYA
+    EOR #&FF
+    TAY
+    AND #&F8
+    STA screen_lo
+    ASL A
+    ROL screen_hi
+    ASL A
+    ROL screen_hi
+    CLC
+    ADC screen_lo
+    STA screen_lo
+    LDA #&00
+    ADC screen_hi
+    STA screen_hi
+    ASL screen_lo
+    ROL screen_hi
+    ASL screen_lo
+    ROL screen_hi
+    ASL screen_lo
+    ROL screen_hi
+    ASL screen_lo
+    ROL screen_hi
+    TYA
+    AND #&07
+    STA screen_row_offset
+    CLC
+    ADC screen_lo
+    STA screen_lo
+    TXA
+    AND #&01
+    STA screen_col_offset
+    TXA
+    AND #&FE
+    ASL A
+    ROL &74
+    ASL A
+    ROL &74
+    ADC screen_lo
+    STA screen_lo
+    LDA &74
+    ADC screen_hi
+    ADC #&30
+    STA screen_hi
+    RTS
+}
+
+.lookup_sprite
+{
+    LDY #&00
+    STY sprite_hi
+    ASL A
+    ROL sprite_hi
+    ASL A
+    ROL sprite_hi
+    ADC #&00
+    STA sprite_lo
+    LDA sprite_hi
+    ADC #&11
+    STA sprite_hi
+    LDA (sprite_lo),Y
+    STA sprite_width_pixels
+    CLC
+    ADC #&07
+    LSR A
+    LSR A
+    LSR A
+    STA sprite_width_bytes
+    INY
+    LDA (sprite_lo),Y
+    STA sprite_height
+    INY
+    LDA (sprite_lo),Y
+    TAX
+    INY
+    LDA (sprite_lo),Y
+    STX sprite_lo
+    STA sprite_hi
+    RTS
+}
+
+.draw_sprite_at_text_coords
+{
+    PHA
+    TXA
+    CLC
+    ROL A
+    ROL A
+    ROL A
+    TAX
+    TYA
+    SEC
+    ROL A
+    SEC
+    ROL A
+    SEC
+    ROL A
+    TAY
+    JSR calculate_screen_location
+    PLA
+    JSR lookup_sprite
+    JSR draw_sprite
+    RTS
+}
+
+.write_counted_string
+{
+    STX screen_lo
+    STY screen_hi
+    LDY #&00
+    LDA (screen_lo),Y
+    STA string_length
+    .string_loop
+    INY
+    LDA (screen_lo),Y
+    JSR oswrch
+    CPY string_length
+    BNE string_loop
+    RTS
+}
+
+.test_keys
+{
+    LDX #scan_H EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ test_player_keys
+    .pause_loop
+    LDX #scan_H EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ test_pause_over
+    LDX #scan_ESCAPE EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ test_pause_over
+    LDA #&80
+    STA key_press_bits
+    RTS
+    .test_pause_over
+    JSR test_player_keys
+    LDA key_press_bits
+    BEQ pause_loop
+    .test_player_keys
+    LDA #&00
+    STA key_press_bits
+    LDA #&01
+    STA &80
+    LDX key_right
+    JSR test_next_key
+    LDX key_left
+    JSR test_next_key
+    LDX key_down
+    JSR test_next_key
+    LDX key_up
+    JSR test_next_key
+    LDX key_jump
+    JSR test_next_key
+    RTS
+    .test_next_key
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ not_pressed
+    LDA key_press_bits
+    ORA &80
+    STA key_press_bits
+    .not_pressed
+    ASL &80
+    RTS
+}
+
+.randomise
+{
+    LDA rand1
+    AND #&48
+    ADC #&38
+    ASL A
+    ASL A
+    ROL rand4
+    ROL rand3
+    ROL rand2
+    ROL rand1
+    RTS
+}
+
+.add_to_score
+{
+    LDY #&08
+    STY sprite_colour_mask_left
+    LDY current_score,X
+    CLC
+    ADC current_score,X
+    CPX #&03
+    BNE not_ten_thousands_digit
+    INC extra_life_flag
+    .not_ten_thousands_digit
+    CMP #&0A
+    BCC no_carry
+    SEC
+    SBC #&0A
+    STA current_score,X
+    JSR draw_current_digit
+    LDA #&01
+    DEX
+    BPL add_to_score
+    RTS
+    .no_carry
+    STA current_score,X
+    .draw_current_digit
+    CPX #&02
+    BCS visible_digit
+    RTS
+    .visible_digit
+    STA &8C
+    STX &8D
+    STY &8E
+    LDA score_x_position
+    CLC
+    .x_times_5_loop
+    ADC #&05
+    DEX
+    BPL x_times_5_loop
+    STA &8B
+    TAX
+    LDA &8E
+    LDY #&F7
+    JSR draw_digit
+    LDA &8C
+    LDX &8B
+    LDY #&F7
+    JSR draw_digit
+    LDX &8D
+    RTS
+}
+
+.draw_digit
+{
+    PHA
+    JSR calculate_screen_location
+    PLA
+    CLC
+    ADC #&1F
+    JSR lookup_sprite
+    JSR draw_sprite
+    RTS
+}
+
+.wait_for_interval_timer
+{
+    LDA #&03
+    LDX #&00
+    LDY #&00
+    JSR osword
+    LDA &01
+    BNE reset_timer
+    LDA &00
+    CMP #&03
+    BCC wait_for_interval_timer
+    .reset_timer
+    LDA #&00
+    STA &00
+    STA &01
+    LDA #&04
+    LDX #&00
+    LDY #&00
+    JSR osword
+    RTS
+}
+
+.init_and_draw_level
+{
+    LDA #&10
+    JSR oswrch
+    JSR draw_game_stats
+    LDA scenario_number
+    ASL A
+    TAY
+    LDA scenario_lookup_table,Y
+    STA scenario_lo
+    INY
+    LDA scenario_lookup_table,Y
+    STA scenario_hi
+    LDY #&00
+    LDA (scenario_lo),Y
+    STA wall_count
+    INY
+    LDA (scenario_lo),Y
+    STA ladder_count
+    INY
+    LDA (scenario_lo),Y
+    STA lift_flag
+    INY
+    LDA (scenario_lo),Y
+    STA grain_count
+    INY
+    LDA (scenario_lo),Y
+    STA chicken_count
+    LDA #&00
+    TAX
+    .clear_board_loop
+    STA board_page1,X
+    STA board_page2,X
+    DEX
+    BNE clear_board_loop
+    LDA #&0A
+    STA sprite_colour_mask_left
+    LDA wall_count
+    STA loop_counter
+    STY &89
+    .wall_loop
+    LDY &89
+    INY
+    LDA (scenario_lo),Y
+    STA &8B
+    INY
+    LDA (scenario_lo),Y
+    STA &8C
+    INY
+    LDA (scenario_lo),Y
+    SEC
+    SBC &8C
+    STA &8D
+    STY &89
+    .wall_segments_loop
+    LDA #&01
+    LDY &8B
+    LDX &8C
+    JSR board_write
+    LDX &8C
+    JSR draw_sprite_at_text_coords
+    INC &8C
+    DEC &8D
+    BPL wall_segments_loop
+    DEC loop_counter
+    BNE wall_loop
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDA ladder_count
+    STA loop_counter
+    .ladder_loop
+    LDY &89
+    INY
+    LDA (scenario_lo),Y
+    STA &8B
+    INY
+    LDA (scenario_lo),Y
+    STA &8C
+    INY
+    LDA (scenario_lo),Y
+    SEC
+    SBC &8C
+    STA &8D
+    STY &89
+    .ladder_segments_loop
+    LDX &8B
+    LDY &8C
+    JSR board_read_with_range_check
+    BEQ no_wall_segment
+    LDX #&0A
+    STX sprite_colour_mask_left
+    LDX &8B
+    JSR draw_sprite_at_text_coords
+    LDA #&01
+    LDX #&08
+    STX sprite_colour_mask_left
+    .no_wall_segment
+    ORA #&02
+    LDX &8B
+    LDY &8C
+    JSR board_write
+    LDA #&02
+    LDX &8B
+    LDY &8C
+    JSR draw_sprite_at_text_coords
+    INC &8C
+    DEC &8D
+    BPL ladder_segments_loop
+    DEC loop_counter
+    BNE ladder_loop
+    LDA lift_flag
+    BEQ no_lift
+    LDY &89
+    INY
+    LDA (scenario_lo),Y
+    STY &89
+    ASL A
+    ASL A
+    ASL A
+    STA lift_x
+    .no_lift
+    LDA #&02
+    STA sprite_colour_mask_left
+    LDA #&00
+    STA loop_counter
+    STA egg_remaining_count
+    LDA player_data_index
+    STA param
+    .egg_loop
+    LDY &89
+    INY
+    LDA (scenario_lo),Y
+    STA &8B
+    INY
+    LDA (scenario_lo),Y
+    STA &8C
+    STY &89
+    LDX param
+    LDA player_egg_flags,X
+    BNE egg_collected
+    LDA loop_counter
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ADC #&04
+    LDX &8B
+    LDY &8C
+    JSR board_write
+    LDA #&03
+    LDX &8B
+    LDY &8C
+    JSR draw_sprite_at_text_coords
+    INC egg_remaining_count
+    .egg_collected
+    INC param
+    INC loop_counter
+    LDA loop_counter
+    CMP #&0C
+    BCC egg_loop
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDA #&00
+    STA loop_counter
+    LDA player_data_index
+    STA param
+    .grain_loop
+    LDY &89
+    INY
+    LDA (scenario_lo),Y
+    STA &8B
+    INY
+    LDA (scenario_lo),Y
+    STA &8C
+    STY &89
+    LDX param
+    LDA player_grain_flags,X
+    BNE grain_collected
+    LDA loop_counter
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ADC #&08
+    LDX &8B
+    LDY &8C
+    JSR board_write
+    LDA #&04
+    LDX &8B
+    LDY &8C
+    JSR draw_sprite_at_text_coords
+    .grain_collected
+    INC param
+    INC loop_counter
+    LDA loop_counter
+    CMP grain_count
+    BCC grain_loop
+    LDA #&20
+    STA sprite_colour_mask_left
+    LDX #&00
+    LDY #&DC
+    JSR calculate_screen_location
+    LDX #&13
+    LDA duck_loose_flag
+    BEQ duck_in_cage
+    INX
+    .duck_in_cage
+    TXA
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDY &89
+    LDX #&00
+    .chicken_loop
+    INY
+    LDA (scenario_lo),Y
+    STA chicken_board_xs,X
+    INY
+    LDA (scenario_lo),Y
+    STA chicken_board_ys,X
+    INX
+    CPX #&05
+    BCC chicken_loop
+    RTS
+    .draw_game_stats
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDX #&00
+    LDY #&F8
+    JSR calculate_screen_location
+    LDA #&29
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDX player
+    LDA #&00
+    CLC
+    .x_times_34_loop
+    ADC #&22
+    DEX
+    BPL x_times_34_loop
+    SEC
+    SBC #&07
+    TAX
+    LDY #&F8
+    JSR calculate_screen_location
+    LDA #&2A
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDX #&00
+    STX param
+    .draw_player_stats_loop
+    JSR draw_score_and_lives
+    INC param
+    LDX param
+    CPX player_total_count
+    BCC draw_player_stats_loop
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDX #&00
+    LDY #&E8
+    JSR calculate_screen_location
+    LDA #&2B
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDX #&1B
+    LDY #&E7
+    JSR calculate_screen_location
+    LDA player
+    CLC
+    ADC #&20
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDX #&24
+    LDY #&E8
+    JSR calculate_screen_location
+    LDA #&2C
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDA #&00
+    STA &8B
+    STA &8C
+    LDX level_number
+    INX
+    STX &8D
+    LDA &8D
+    LDX #&00
+    .div_mod_10_loop_a
+    CMP #&0A
+    BCC less_than_10_a
+    SEC
+    SBC #&0A
+    INX
+    JMP div_mod_10_loop_a
+    .less_than_10_a
+    STA &8D
+    TXA
+    LDX #&00
+    .div_mod_10_loop_b
+    CMP #&0A
+    BCC less_than_10_b
+    SEC
+    SBC #&0A
+    INX
+    JMP div_mod_10_loop_b
+    .less_than_10_b
+    STA &8C
+    STX &8B
+    LDA &8B
+    BEQ skip_zero_hundreds
+    LDX #&3B
+    LDY #&E7
+    JSR draw_digit
+    .skip_zero_hundreds
+    LDA &8C
+    LDX #&40
+    LDY #&E7
+    JSR draw_digit
+    LDA &8D
+    LDX #&45
+    LDY #&E7
+    JSR draw_digit
+    LDX #&4E
+    LDY #&E8
+    JSR calculate_screen_location
+    LDA #&2D
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDA bonus_3
+    LDX #&66
+    LDY #&E7
+    JSR draw_digit
+    LDA bonus_2
+    LDX #&6B
+    LDY #&E7
+    JSR draw_digit
+    LDA bonus_1
+    LDX #&70
+    LDY #&E7
+    JSR draw_digit
+    LDA #&00
+    LDX #&75
+    LDY #&E7
+    JSR draw_digit
+    LDX #&7E
+    LDY #&E8
+    JSR calculate_screen_location
+    LDA #&2E
+    JSR lookup_sprite
+    JSR draw_sprite
+    LDA round_number
+    LSR A
+    CMP #&08
+    BCC round_less_than_8
+    LDA #&08
+    .round_less_than_8
+    EOR #&FF
+    SEC
+    ADC #&09
+    STA timer_2
+    LDX #&91
+    LDY #&E7
+    JSR draw_digit
+    LDA #&00
+    STA timer_1
+    LDX #&96
+    LDY #&E7
+    JSR draw_digit
+    LDA #&00
+    STA timer_0
+    LDX #&9B
+    LDY #&E7
+    JSR draw_digit
+    RTS
+    .draw_score_and_lives
+    LDA #&00
+    CLC
+    .x_times_34_loop_b
+    ADC #&22
+    DEX
+    BPL x_times_34_loop_b
+    SEC
+    SBC #&07
+    STA &8B
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDA param
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    TAX
+    INX
+    INX
+    STX &8D
+    LDX &8B
+    INX
+    STX &8C
+    LDA #&06
+    STA &8E
+    .draw_digits_loop
+    LDX &8D
+    LDA player_score,X
+    LDX &8C
+    LDY #&F7
+    JSR draw_digit
+    LDA &8C
+    CLC
+    ADC #&05
+    STA &8C
+    INC &8D
+    DEC &8E
+    BNE draw_digits_loop
+    LDA #&20
+    STA sprite_colour_mask_left
+    LDX param
+    LDA player_lives,X
+    BEQ no_lives_left
+    CMP #&08
+    BCC lives_less_than_8
+    LDA #&08
+    .lives_less_than_8
+    STA &8E
+    LDA &8B
+    STA &8C
+    .draw_pips_loop
+    LDX &8C
+    LDY #&EE
+    JSR calculate_screen_location
+    LDA #&2F
+    JSR lookup_sprite
+    JSR draw_sprite
+    DEC &8E
+    BEQ no_lives_left
+    LDA &8C
+    CLC
+    ADC #&04
+    STA &8C
+    JMP draw_pips_loop
+    .no_lives_left
+    RTS
+}
+
+.update_harry
+{
+    LDA #&00
+    STA harry_dx
+    STA harry_dy
+    LDA key_press_bits
+    LSR A
+    BCC not_right_key
+    INC harry_dx
+    .not_right_key
+    LSR A
+    BCC not_left_key
+    DEC harry_dx
+    .not_left_key
+    LSR A
+    BCC not_down_key
+    DEC harry_dy
+    .not_down_key
+    LSR A
+    BCC not_up_key
+    INC harry_dy
+    .not_up_key
+    ASL harry_dy
+    LDA harry_state
+    BEQ state_zero
+    CMP #&02
+    BNE state_not_two
+    JMP state_two_within_jump
+    .state_not_two
+    BCS state_greater_than_two
+    JMP state_one_on_ladder
+    .state_greater_than_two
+    CMP #&03
+    BNE state_greater_than_three
+    JMP state_three_falling
+    .state_greater_than_three
+    JMP state_four_on_lift
+    .state_zero
+    LDA key_press_bits
+    AND #&10
+    BEQ not_jump_key
+    JMP start_jump
+    .not_jump_key
+    LDA harry_dy
+    BEQ not_ladder
+    LDX harry_cell_x
+    CPX #&03
+    BNE not_ladder
+    LDA harry_dy
+    BMI try_going_down
+    LDX harry_board_x
+    LDY harry_board_y
+    INY
+    INY
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ not_ladder
+    BNE do_ladder_start
+    .try_going_down
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ not_ladder
+    .do_ladder_start
+    LDA #&00
+    STA harry_dx
+    LDA #&01
+    STA harry_state
+    JMP update_facing
+    .not_ladder
+    LDA #&00
+    STA harry_dy
+    LDA harry_cell_x
+    CLC
+    ADC harry_dx
+    LDX harry_board_x
+    CMP #&00
+    BPL not_entering_left_cell
+    DEX
+    .not_entering_left_cell
+    CMP #&08
+    BMI not_entering_right_cell
+    INX
+    .not_entering_right_cell
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BNE cell_has_wall
+    TAY
+    LDX #&FF
+    LDA harry_dx
+    CLC
+    ADC harry_cell_x
+    AND #&07
+    CMP #&04
+    BCS falling_left
+    LDX #&01
+    INY
+    .falling_left
+    STX harry_fall_facing
+    STY harry_fall_scaled_vy
+    LDA #&03
+    STA harry_state
+    .cell_has_wall
+    JSR test_horizontal_obstructions
+    BCC update_facing
+    LDA #&00
+    STA harry_dx
+    .update_facing
+    LDA harry_dx
+    BEQ skip_update_facing
+    STA harry_facing
+    .skip_update_facing
+    JMP harry_apply_dx_dy
+    .state_one_on_ladder
+    LDA key_press_bits
+    AND #&10
+    BEQ not_jump_from_ladder
+    JMP start_jump
+    .not_jump_from_ladder
+    LDA harry_dx
+    BEQ not_sideways_from_ladder
+    LDX harry_cell_y
+    BNE not_sideways_from_ladder
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ not_sideways_from_ladder
+    LDA #&00
+    STA harry_dy
+    LDA #&00
+    STA harry_state
+    JMP set_harry_facing_ladder
+    .not_sideways_from_ladder
+    LDA #&00
+    STA harry_dx
+    LDA harry_dy
+    BEQ set_harry_facing_ladder
+    LDA harry_cell_y
+    BNE set_harry_facing_ladder
+    LDA harry_dy
+    BMI ladder_going_down
+    LDX harry_board_x
+    LDY harry_board_y
+    INY
+    INY
+    JSR board_read_with_range_check
+    AND #&02
+    BNE set_harry_facing_ladder
+    STA harry_dy
+    JMP set_harry_facing_ladder
+    .ladder_going_down
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&02
+    BNE set_harry_facing_ladder
+    STA harry_dy
+    .set_harry_facing_ladder
+    LDA #&00
+    STA harry_facing
+    JMP harry_apply_dx_dy
+    .state_two_within_jump
+    LDA harry_fall_facing
+    STA harry_dx
+    LDA harry_dy
+    STA &89
+    LDA harry_fall_scaled_vy
+    LSR A
+    LSR A
+    CMP #&06
+    BCC vy_in_range
+    LDA #&06
+    .vy_in_range
+    EOR #&FF
+    SEC
+    ADC #&02
+    STA harry_dy
+    INC harry_fall_scaled_vy
+    LDA harry_y
+    CMP #&DC
+    BCC not_bounce_off_top
+    LDA #&FF
+    STA harry_dy
+    LDA #&0C
+    STA harry_fall_scaled_vy
+    JMP test_lift_collision
+    .not_bounce_off_top
+    LDA harry_cell_x
+    CLC
+    ADC harry_dx
+    CMP #&03
+    BNE not_grabbing_ladder
+    LDA &89
+    BEQ not_grabbing_ladder
+    BMI test_grab_ladder_with_down_key
+    .comment_jumping_up_in_middle_of_cell
+    LDX harry_board_x
+    LDY harry_board_y
+    INY
+    JSR board_read_with_range_check
+    AND #&02
+    BNE grab_ladder_with_up_key
+    LDX harry_board_x
+    LDY harry_board_y
+    INY
+    LDA harry_cell_y
+    CMP #&04
+    BCC harry_in_bottom_half_of_cell_2
+    INY
+    .harry_in_bottom_half_of_cell_2
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ not_grabbing_ladder
+    .grab_ladder_with_up_key
+    LDA #&01
+    STA harry_state
+    LDA harry_cell_y
+    CLC
+    ADC harry_dy
+    AND #&01
+    BEQ up_grab_position_already_even
+    INC harry_dy
+    .up_grab_position_already_even
+    JMP no_horizontal_bounce
+    .test_grab_ladder_with_down_key
+    LDX harry_board_x
+    LDY harry_board_y
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ not_grabbing_ladder
+    LDX harry_board_x
+    LDY harry_board_y
+    INY
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ not_grabbing_ladder
+    LDA #&01
+    STA harry_state
+    LDA harry_cell_y
+    CLC
+    ADC harry_dy
+    AND #&01
+    BEQ down_grab_position_already_even
+    DEC harry_dy
+    .down_grab_position_already_even
+    JMP no_horizontal_bounce
+    .not_grabbing_ladder
+    LDA harry_dy
+    CLC
+    ADC harry_cell_y
+    BEQ test_jump_landing_on_wall
+    BPL test_hop_up
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ test_lift_collision
+    LDA #&00
+    STA harry_state
+    LDA #&00
+    SEC
+    SBC harry_cell_y
+    STA harry_dy
+    JMP test_lift_collision
+    .test_jump_landing_on_wall
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ test_lift_collision
+    LDA #&00
+    STA harry_state
+    JMP test_lift_collision
+    .test_hop_up
+    CMP #&08
+    BNE test_lift_collision
+    LDX harry_board_x
+    LDY harry_board_y
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ test_lift_collision
+    LDA #&00
+    STA harry_state
+    JMP test_lift_collision
+    .test_lift_collision
+    LDA lift_flag
+    BEQ no_lift
+    LDA lift_x
+    SEC
+    SBC #&01
+    CMP harry_x
+    BCS no_lift
+    ADC #&0A
+    CMP harry_x
+    BCC no_lift
+    LDA harry_y
+    SEC
+    SBC #&11
+    STA &8B
+    SBC #&02
+    CLC
+    ADC harry_dy
+    STA &8C
+    LDA lift_y1
+    CMP &8B
+    BEQ join_lift_one
+    BCS try_lift_two
+    CMP &8C
+    BCC try_lift_two
+    .join_lift_one
+    LDX lift_alternator
+    BNE other_lift_moving
+    CLC
+    ADC #&01
+    .other_lift_moving
+    JMP join_a_lift
+    .try_lift_two
+    LDA lift_y2
+    CMP &8B
+    BEQ join_lift_two
+    BCS no_lift
+    CMP &8C
+    BCC no_lift
+    .join_lift_two
+    LDX lift_alternator
+    BEQ join_a_lift
+    CLC
+    ADC #&01
+    .join_a_lift
+    SEC
+    SBC &8B
+    CLC
+    ADC #&01
+    STA harry_dy
+    LDA #&00
+    STA harry_fall_scaled_vy
+    LDA #&04
+    STA harry_state
+    JMP no_horizontal_bounce
+    .no_lift
+    JSR test_horizontal_obstructions
+    BCC no_horizontal_bounce
+    LDA #&00
+    SEC
+    SBC harry_dx
+    STA harry_dx
+    STA harry_fall_facing
+    .no_horizontal_bounce
+    JMP harry_apply_dx_dy
+    .start_jump
+    LDA #&00
+    STA harry_fall_scaled_vy
+    LDA #&02
+    STA harry_state
+    LDA harry_dx
+    STA harry_fall_facing
+    BEQ falling_straight_retain_facing
+    STA harry_facing
+    .falling_straight_retain_facing
+    JMP state_two_within_jump
+    .state_three_falling
+    INC harry_fall_scaled_vy
+    LDA harry_fall_scaled_vy
+    CMP #&04
+    BCS falling_faster
+    LDA harry_fall_facing
+    STA harry_dx
+    LDA #&FF
+    STA harry_dy
+    JMP test_fall_landing
+    .falling_faster
+    LDA #&00
+    STA harry_dx
+    LDA harry_fall_scaled_vy
+    LSR A
+    LSR A
+    CMP #&04
+    BCC scaled_vy_in_range
+    LDA #&03
+    .scaled_vy_in_range
+    EOR #&FF
+    STA harry_dy
+    .test_fall_landing
+    LDA harry_dy
+    CLC
+    ADC harry_cell_y
+    BEQ test_fall_landing_on_wall
+    BPL fall_processing_complete
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ fall_processing_complete
+    LDA #&00
+    STA harry_state
+    LDA #&00
+    SEC
+    SBC harry_cell_y
+    STA harry_dy
+    JMP fall_processing_complete
+    .test_fall_landing_on_wall
+    LDX harry_board_x
+    LDY harry_board_y
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ fall_processing_complete
+    LDA #&00
+    STA harry_state
+    .fall_processing_complete
+    JMP harry_apply_dx_dy
+    .state_four_on_lift
+    LDA key_press_bits
+    AND #&10
+    BEQ not_jump_from_lift
+    JMP start_jump
+    .not_jump_from_lift
+    LDA lift_x
+    SEC
+    SBC #&01
+    CMP harry_x
+    BCS fall_from_lift
+    ADC #&0A
+    CMP harry_x
+    BCS not_fall_from_lift
+    .fall_from_lift
+    LDA #&00
+    STA harry_fall_scaled_vy
+    STA harry_fall_facing
+    LDA #&03
+    STA harry_state
+    .not_fall_from_lift
+    LDA #&01
+    STA harry_dy
+    LDA harry_dx
+    BEQ not_moving_retain_facing
+    STA harry_facing
+    .not_moving_retain_facing
+    JSR test_horizontal_obstructions
+    BCC horizontal_movement_clear
+    LDA #&00
+    STA harry_dx
+    .horizontal_movement_clear
+    LDA harry_y
+    CMP #&DC
+    BCC harry_apply_dx_dy
+    INC dead_flag
+    .harry_apply_dx_dy
+    LDA harry_sprite_index
+    JSR draw_harry
+    LDA harry_x
+    CLC
+    ADC harry_dx
+    STA harry_x
+    LDA harry_cell_x
+    CLC
+    ADC harry_dx
+    BPL not_move_to_left_cell
+    DEC harry_board_x
+    .not_move_to_left_cell
+    CMP #&08
+    BMI not_move_to_right_cell
+    INC harry_board_x
+    .not_move_to_right_cell
+    AND #&07
+    STA harry_cell_x
+    LDA harry_y
+    CLC
+    ADC harry_dy
+    STA harry_y
+    LDA harry_cell_y
+    CLC
+    ADC harry_dy
+    BPL not_move_to_down_cell
+    DEC harry_board_y
+    .not_move_to_down_cell
+    CMP #&08
+    BMI not_move_to_up_cell
+    INC harry_board_y
+    .not_move_to_up_cell
+    AND #&07
+    STA harry_cell_y
+    LDX #&06
+    LDA harry_facing
+    BEQ harry_facing_ladder
+    BPL harry_not_facing_left
+    LDX #&09
+    .harry_not_facing_left
+    STX param
+    LDA harry_cell_x
+    LSR A
+    JMP harry_calculate_frame
+    .harry_facing_ladder
+    LDA #&0C
+    STA param
+    LDA harry_cell_y
+    LSR A
+    .harry_calculate_frame
+    LDX #&02
+    STX &89
+    BIT &89
+    BEQ zero_one_else_zero_two
+    AND #&01
+    ASL A
+    .zero_one_else_zero_two
+    LDX harry_state
+    CPX #&01
+    BNE harry_not_on_ladder
+    LDX harry_dy
+    BNE harry_apply_frame_offset
+    LDA #&00
+    JMP harry_apply_frame_offset
+    .harry_not_on_ladder
+    LDX harry_dx
+    BNE harry_apply_frame_offset
+    LDA #&00
+    .harry_apply_frame_offset
+    CLC
+    ADC param
+    STA harry_sprite_index
+    JSR draw_harry
+    LDX harry_board_x
+    LDY harry_board_y
+    LDA harry_cell_y
+    CMP #&04
+    BCC harry_in_bottom_half_of_cell
+    INY
+    .harry_in_bottom_half_of_cell
+    STY &89
+    JSR board_read_with_range_check
+    STA param
+    AND #&0C
+    BEQ rts
+    AND #&08
+    BNE consume_grain
+    DEC egg_remaining_count
+    LDA #&06
+    STA sound3_pitch
+    LXY sound3
+    LDA #&07
+    JSR osword
+    LDA param
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    CLC
+    ADC player_data_index
+    TAX
+    DEC player_egg_flags,X
+    LDX harry_board_x
+    LDY &89
+    JSR delete_egg
+    LDA level_number
+    LSR A
+    LSR A
+    CLC
+    ADC #&01
+    CMP #&0A
+    BCC egg_bonus_in_range
+    LDA #&0A
+    .egg_bonus_in_range
+    LDX #&05
+    JSR add_to_score
+    JMP rts
+    .consume_grain
+    LDA #&05
+    STA sound3_pitch
+    LXY sound3
+    LDA #&07
+    JSR osword
+    LDA param
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    CLC
+    ADC player_data_index
+    TAX
+    DEC player_grain_flags,X
+    LDX harry_board_x
+    LDY &89
+    JSR delete_grain
+    LDA #&05
+    LDX #&06
+    JSR add_to_score
+    LDA #&14
+    STA clock_stop_timer
+    .rts
+    RTS
+    .test_horizontal_obstructions
+    LDA harry_dx
+    BMI test_left
+    BNE test_right
+    CLC
+    RTS
+    .test_left
+    LDA harry_x
+    CMP #&01
+    BCC horizontal_obstruction
+    LDA harry_cell_x
+    CMP #&02
+    BCS no_obstruction
+    LDA harry_dy
+    CMP #&02
+    BEQ no_obstruction
+    LDX harry_board_x
+    DEX
+    LDY harry_board_y
+    LDA harry_cell_y
+    CLC
+    ADC harry_dy
+    CMP #&08
+    BCC test_this_row_left
+    BPL test_row_above_left
+    DEY
+    JMP test_this_row_left
+    .test_row_above_left
+    INY
+    .test_this_row_left
+    JSR board_read_with_range_check
+    CMP #&01
+    BEQ horizontal_obstruction
+    LDA harry_dy
+    BPL no_obstruction
+    LDX harry_board_x
+    DEX
+    INY
+    JSR board_read_with_range_check
+    CMP #&01
+    BEQ horizontal_obstruction
+    BNE no_obstruction
+    .test_right
+    LDA harry_x
+    CMP #&98
+    BCS horizontal_obstruction
+    LDA harry_cell_x
+    CMP #&05
+    BCC no_obstruction
+    LDA harry_dy
+    CMP #&02
+    BEQ no_obstruction
+    LDX harry_board_x
+    INX
+    LDY harry_board_y
+    LDA harry_cell_y
+    CLC
+    ADC harry_dy
+    CMP #&08
+    BCC test_this_row_right
+    BPL test_row_above_right
+    DEY
+    JMP test_this_row_right
+    .test_row_above_right
+    INY
+    .test_this_row_right
+    JSR board_read_with_range_check
+    CMP #&01
+    BEQ horizontal_obstruction
+    LDA harry_dy
+    BPL no_obstruction
+    LDX harry_board_x
+    INX
+    INY
+    JSR board_read_with_range_check
+    CMP #&01
+    BEQ horizontal_obstruction
+    .no_obstruction
+    CLC
+    RTS
+    .horizontal_obstruction
+    SEC
+    RTS
+    .delete_egg
+    TXA
+    PHA
+    LDA #&00
+    JSR board_write
+    LDA #&02
+    STA sprite_colour_mask_left
+    PLA
+    TAX
+    LDA #&03
+    JSR draw_sprite_at_text_coords
+    RTS
+}
+
+.delete_grain
+{
+    TXA
+    PHA
+    LDA #&00
+    JSR board_write
+    LDA #&08
+    STA sprite_colour_mask_left
+    PLA
+    TAX
+    LDA #&04
+    JSR draw_sprite_at_text_coords
+    RTS
+}
+
+.draw_harry
+{
+    LDX #&20
+    STX sprite_colour_mask_left
+    JSR lookup_sprite
+    LDX harry_x
+    LDY harry_y
+    JSR calculate_screen_location
+    JSR draw_sprite
+    RTS
+}
+
+.draw_duck
+{
+    LDX #&20
+    STX sprite_colour_mask_left
+    CLC
+    ADC #&0F
+    JSR lookup_sprite
+    LDX duck_x
+    LDY duck_y
+    JSR calculate_screen_location
+    JSR draw_sprite
+    RTS
+}
+
+.draw_chicken
+{
+    LDX #&80
+    STX sprite_colour_mask_left
+    LDX param
+    LDA chicken_sprite_indices,X
+    CLC
+    ADC #&15
+    PHA
+    JSR lookup_sprite
+    LDX param
+    LDA chicken_xs,X
+    LDY chicken_ys,X
+    TAX
+    PLA
+    CMP #&1D
+    BCC not_feeding_left
+    TXA
+    SBC #&08
+    TAX
+    .not_feeding_left
+    JSR calculate_screen_location
+    JSR draw_sprite
+    RTS
+}
+
+.update_lift
+{
+    LDA lift_flag
+    BEQ no_lift
+    LDY lift_y1
+    LDA lift_alternator
+    BEQ update_lift_1
+    LDY lift_y2
+    .update_lift_1
+    STY &89
+    LDA #&02
+    STA sprite_colour_mask_left
+    LDA #&05
+    JSR lookup_sprite
+    LDX lift_x
+    LDY &89
+    JSR calculate_screen_location
+    JSR draw_sprite
+    INC &89
+    INC &89
+    LDA &89
+    CMP #&E0
+    BNE lift_not_at_top
+    LDA #&06
+    STA &89
+    .lift_not_at_top
+    LDA #&05
+    JSR lookup_sprite
+    LDX lift_x
+    LDY &89
+    JSR calculate_screen_location
+    JSR draw_sprite
+    LDA lift_alternator
+    BEQ write_lift_y1
+    LDA &89
+    STA lift_y2
+    JMP written_lift_y
+    .write_lift_y1
+    LDA &89
+    STA lift_y1
+    .written_lift_y
+    LDA lift_alternator
+    EOR #&FF
+    STA lift_alternator
+    .no_lift
+    RTS
+}
+
+.board_read_with_range_check
+{
+    CPY #&19
+    BCS out_of_bounds
+    CPX #&14
+    BCS out_of_bounds
+    JSR board_calculate_index
+    BCS page_2
+    LDA board_page1,X
+    RTS
+    .page_2
+    LDA board_page2,X
+    RTS
+    .out_of_bounds
+    LDA #&00
+    RTS
+}
+
+.board_write
+{
+    JSR board_calculate_index
+    BCS page_2
+    STA board_page1,X
+    RTS
+    .page_2
+    STA board_page2,X
+    RTS
+}
+
+.board_calculate_index
+{
+    PHA
+    STY &8E
+    TYA
+    ASL A
+    ASL A
+    ADC &8E
+    ASL A
+    ASL A
+    PHP
+    CLC
+    STA &8E
+    TXA
+    ADC &8E
+    TAX
+    BCS addition_carried
+    PLP
+    PLA
+    RTS
+    .addition_carried
+    PLA
+    PLA
+    RTS
+}
+
+.update_birds_timers
+{
+    INC birds_timer_cycle
+    LDA birds_timer_cycle
+    CMP #&08
+    BNE cycle_not_overflowed
+    LDA #&00
+    STA birds_timer_cycle
+    JMP update_duck
+    .cycle_not_overflowed
+    CMP #&04
+    BNE cycle_not_midway
+    JMP update_timers
+    .cycle_not_midway
+    JMP update_chickens
+    .update_duck
+    LDA duck_direction_flap
+    AND #&02
+    STA &8B
+    LDA duck_loose_flag
+    BEQ duck_in_cage
+    LDA duck_x
+    CLC
+    ADC #&04
+    CMP harry_x
+    BCS duck_right_of_harry
+    INC duck_vx
+    LDA duck_vx
+    CMP #&06
+    BMI vx_less_than_6
+    DEC duck_vx
+    .vx_less_than_6
+    LDA #&00
+    STA &8B
+    JMP vx_adjusted
+    .duck_right_of_harry
+    DEC duck_vx
+    LDA duck_vx
+    CMP #&FB
+    BPL vx_greater_or_equal_minus_5
+    INC duck_vx
+    .vx_greater_or_equal_minus_5
+    LDA #&02
+    STA &8B
+    .vx_adjusted
+    LDA harry_y
+    CLC
+    ADC #&04
+    CMP duck_y
+    BCC duck_above_harry
+    INC duck_vy
+    LDA duck_vy
+    CMP #&06
+    BMI vy_less_than_6
+    DEC duck_vy
+    .vy_less_than_6
+    JMP vy_adjusted
+    .duck_above_harry
+    DEC duck_vy
+    LDA duck_vy
+    CMP #&FB
+    BPL vy_adjusted
+    INC duck_vy
+    .vy_adjusted
+    LDA duck_y
+    CLC
+    ADC duck_vy
+    CMP #&28
+    BCS duck_not_at_bottom
+    LDA duck_vy
+    EOR #&FF
+    STA duck_vy
+    INC duck_vy
+    .duck_not_at_bottom
+    LDA duck_x
+    CLC
+    ADC duck_vx
+    CMP #&90
+    BCC duck_in_cage
+    LDA duck_vx
+    EOR #&FF
+    STA duck_vx
+    INC duck_vx
+    .duck_in_cage
+    LDA duck_direction_flap
+    JSR draw_duck
+    LDA duck_x
+    CLC
+    ADC duck_vx
+    STA duck_x
+    LDA duck_y
+    CLC
+    ADC duck_vy
+    STA duck_y
+    LDA duck_direction_flap
+    AND #&01
+    EOR #&01
+    ORA &8B
+    STA duck_direction_flap
+    JSR draw_duck
+    RTS
+    .update_chickens
+    DEC current_chicken
+    LDX current_chicken
+    BPL current_chicken_not_wrapped
+    LDX chicken_speed
+    STX current_chicken
+    .current_chicken_not_wrapped
+    CPX chicken_count
+    BCC current_chicken_live
+    RTS
+    .current_chicken_live
+    STX param
+    LDA chicken_states,X
+    CMP #&01
+    BNE state_not_one
+    JMP chicken_state_one
+    .state_not_one
+    BCC chicken_state_zero
+    JMP chicken_state_two_or_more
+    .chicken_state_zero
+    LDA chicken_board_xs,X
+    STA &8B
+    LDA chicken_board_ys,X
+    STA &8C
+    LDA #&00
+    STA &8D
+    LDX &8B
+    LDY &8C
+    DEX
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ no_wall_left
+    STA &8D
+    .no_wall_left
+    LDX &8B
+    LDY &8C
+    INX
+    DEY
+    JSR board_read_with_range_check
+    AND #&01
+    BEQ no_wall_right
+    LDA #&02
+    ORA &8D
+    STA &8D
+    .no_wall_right
+    LDX &8B
+    LDY &8C
+    DEY
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ no_ladder_down
+    LDA #&08
+    ORA &8D
+    STA &8D
+    .no_ladder_down
+    LDX &8B
+    LDY &8C
+    INY
+    INY
+    JSR board_read_with_range_check
+    AND #&02
+    BEQ no_ladder_up
+    LDA #&04
+    ORA &8D
+    STA &8D
+    .no_ladder_up
+    JSR count_chicken_options
+    CPX #&01
+    BNE multiple_options
+    LDA &8D
+    LDX param
+    STA chicken_directions,X
+    JMP one_option_selected
+    .multiple_options
+    LDX param
+    LDA chicken_directions,X
+    CMP #&04
+    BCS using_ladder
+    EOR #&FC
+    JMP clear_opposite_direction_retain_orthogonal
+    .using_ladder
+    EOR #&F3
+    .clear_opposite_direction_retain_orthogonal
+    AND &8D
+    STA &8D
+    JSR count_chicken_options
+    CPX #&01
+    BNE multiple_options_still
+    LDX param
+    LDA &8D
+    STA chicken_directions,X
+    JMP one_option_selected
+    .multiple_options_still
+    LDA &8D
+    STA &8E
+    .choose_random_direction_loop
+    JSR randomise
+    LDA rand1
+    AND &8E
+    STA &8D
+    JSR count_chicken_options
+    CPX #&01
+    BNE choose_random_direction_loop
+    LDX param
+    LDA &8D
+    STA chicken_directions,X
+    .one_option_selected
+    LDX param
+    LDA chicken_directions,X
+    AND #&03
+    BEQ chicken_state_one
+    AND #&01
+    BEQ going_right
+    LDX &8B
+    LDY &8C
+    DEX
+    JSR board_read_with_range_check
+    JMP test_grain
+    .going_right
+    LDX &8B
+    LDY &8C
+    INX
+    JSR board_read_with_range_check
+    .test_grain
+    AND #&08
+    BEQ chicken_state_one
+    LDX param
+    LDA #&02
+    STA chicken_states,X
+    JMP chicken_state_one
+    .count_chicken_options
+    LDX #&00
+    LDA &8D
+    .count_bits_loop
+    LSR A
+    BCC bit_not_set
+    INX
+    .bit_not_set
+    CMP #&00
+    BNE count_bits_loop
+    RTS
+    .chicken_state_two_or_more
+    CMP #&04
+    BNE chicken_state_one
+    LDA chicken_directions,X
+    LDY chicken_board_xs,X
+    STY &8B
+    LDY chicken_board_ys,X
+    STY &8C
+    LDX &8B
+    DEX
+    AND #&01
+    BNE moving_left
+    INX
+    INX
+    .moving_left
+    STX &8D
+    JSR board_read_with_range_check
+    STA &89
+    AND #&08
+    BEQ chicken_state_one
+    LDA &89
+    LSR A
+    LSR A
+    LSR A
+    LSR A
+    CLC
+    ADC player_data_index
+    TAX
+    DEC player_grain_flags,X
+    LDX &8D
+    LDY &8C
+    JSR delete_grain
+    .chicken_state_one
+    JSR draw_chicken
+    LDX param
+    LDA chicken_states,X
+    CMP #&02
+    BCS chicken_eating
+    LDA chicken_directions,X
+    LSR A
+    BCS move_chicken_left
+    LSR A
+    BCS move_chicken_right
+    LSR A
+    BCS move_chicken_up
+    LDA chicken_ys,X
+    SEC
+    SBC #&04
+    STA chicken_ys,X
+    LDA chicken_states,X
+    BEQ skip_dec_y
+    DEC chicken_board_ys,X
+    .skip_dec_y
+    LDA #&04
+    JMP move_chicken_finish
+    .move_chicken_up
+    LDA chicken_ys,X
+    CLC
+    ADC #&04
+    STA chicken_ys,X
+    LDA chicken_states,X
+    BEQ skip_inc_y
+    INC chicken_board_ys,X
+    .skip_inc_y
+    LDA #&04
+    JMP move_chicken_finish
+    .move_chicken_left
+    LDA chicken_xs,X
+    SEC
+    SBC #&04
+    STA chicken_xs,X
+    LDA chicken_states,X
+    BEQ skip_dec_x
+    DEC chicken_board_xs,X
+    .skip_dec_x
+    LDA #&02
+    JMP move_chicken_finish
+    .move_chicken_right
+    LDA chicken_xs,X
+    CLC
+    ADC #&04
+    STA chicken_xs,X
+    LDA chicken_states,X
+    BEQ skip_inc_x
+    INC chicken_board_xs,X
+    .skip_inc_x
+    LDA #&00
+    JMP move_chicken_finish
+    .move_chicken_finish
+    STA chicken_sprite_indices,X
+    LDA chicken_states,X
+    EOR #&01
+    STA chicken_states,X
+    CLC
+    ADC chicken_sprite_indices,X
+    STA chicken_sprite_indices,X
+    JSR draw_chicken
+    RTS
+    .chicken_eating
+    LDA chicken_states,X
+    ASL A
+    AND #&1F
+    STA chicken_states,X
+    BEQ feeding_complete
+    LDA #&06
+    .feeding_complete
+    LDY chicken_directions,X
+    CPY #&01
+    BNE moving_right
+    CLC
+    ADC #&02
+    .moving_right
+    LDY chicken_states,X
+    CPY #&08
+    BNE head_not_on_ground
+    CLC
+    ADC #&01
+    .head_not_on_ground
+    STA chicken_sprite_indices,X
+    JSR draw_chicken
+    RTS
+    .update_timers
+    LDA #&08
+    STA sprite_colour_mask_left
+    LDA clock_stop_timer
+    BEQ clock_not_stopped
+    DEC clock_stop_timer
+    RTS
+    .clock_not_stopped
+    LDX #&02
+    STX param
+    .decrement_timer_loop
+    JSR draw_timer_digit
+    LDX param
+    DEC timer_2,X
+    PHP
+    BPL no_borrow
+    LDA #&09
+    STA timer_2,X
+    .no_borrow
+    JSR draw_timer_digit
+    DEC param
+    PLP
+    BMI decrement_timer_loop
+    CLC
+    LDA timer_2
+    ADC timer_1
+    ADC timer_0
+    BNE time_remains
+    INC dead_flag
+    RTS
+    .time_remains
+    LDA timer_0
+    BEQ five_divides_time
+    CMP #&05
+    BEQ five_divides_time
+    RTS
+    .five_divides_time
+    LDA bonus_gone_flag
+    BEQ decrement_bonus
+    RTS
+}
+
+.decrement_bonus
+{
+    LDX #&02
+    STX param
+    .decrement_bonus_loop
+    JSR draw_bonus_digit
+    LDX param
+    DEC bonus_3,X
+    PHP
+    BPL no_borrow
+    LDA #&09
+    STA bonus_3,X
+    .no_borrow
+    JSR draw_bonus_digit
+    DEC param
+    PLP
+    BMI decrement_bonus_loop
+    CLC
+    LDA bonus_3
+    ADC bonus_2
+    ADC bonus_1
+    BNE bonus_remains
+    INC bonus_gone_flag
+    .bonus_remains
+    RTS
+}
+
+.draw_timer_digit
+{
+    LDA param
+    TAY
+    ASL A
+    ASL A
+    ADC param
+    ADC #&91
+    TAX
+    LDA timer_2,Y
+    LDY #&E7
+    JSR draw_digit
+    RTS
+}
+
+.draw_bonus_digit
+{
+    LDA param
+    TAY
+    ASL A
+    ASL A
+    ADC param
+    ADC #&66
+    TAX
+    LDA bonus_3,Y
+    LDY #&E7
+    JSR draw_digit
+    RTS
+}
+
+.hit_test_birds
+{
+    LDA chicken_count
+    BEQ hit_test_duck
+    LDA #&00
+    STA loop_counter
+    .hit_test_chicken_loop
+    LDX loop_counter
+    LDA chicken_xs,X
+    SEC
+    SBC harry_x
+    CLC
+    ADC #&05
+    CMP #&0B
+    BCS chicken_miss
+    LDA chicken_ys,X
+    SEC
+    SBC #&01
+    SBC harry_y
+    CLC
+    ADC #&0E
+    CMP #&1D
+    BCS chicken_miss
+    INC dead_flag
+    .chicken_miss
+    INC loop_counter
+    LDA loop_counter
+    CMP chicken_count
+    BCC hit_test_chicken_loop
+    .hit_test_duck
+    LDA duck_loose_flag
+    BEQ duck_in_cage
+    LDA duck_x
+    CLC
+    ADC #&04
+    SEC
+    SBC harry_x
+    CLC
+    ADC #&05
+    CMP #&0B
+    BCS duck_in_cage
+    LDA duck_y
+    SEC
+    SBC #&05
+    SBC harry_y
+    CLC
+    ADC #&0E
+    CMP #&1D
+    BCS duck_in_cage
+    INC dead_flag
+    .duck_in_cage
+    RTS
+}
+
+.location_of_highscore_x
+{
+    LDA #&00
+    STA sprite_hi
+    DEX
+    TXA
+    ASL A
+    ASL A
+    ASL A
+    ROL sprite_hi
+    ASL A
+    ROL sprite_hi
+    CLC
+    ADC #&30
+    STA sprite_lo
+    LDA sprite_hi
+    ADC #&04
+    STA sprite_hi
+    RTS
+}
+
+.init_highscores
+{
+    LDA #&0A
+    STA loop_counter
+    .init_highscores_loop
+    LDX loop_counter
+    JSR location_of_highscore_x
+    LDY #&0F
+    LDA #&20
+    .name_trailing_spaces_loop
+    STA (sprite_lo),Y
+    DEY
+    CPY #&0A
+    BNE name_trailing_spaces_loop
+    LDA #&46
+    STA (sprite_lo),Y
+    DEY
+    LDA #&26
+    STA (sprite_lo),Y
+    DEY
+    LDA #&41
+    STA (sprite_lo),Y
+    DEY
+    LDA #&00
+    .score_loop
+    STA (sprite_lo),Y
+    DEY
+    BPL score_loop
+    LDA #&01
+    LDY #&04
+    STA (sprite_lo),Y
+    DEC loop_counter
+    BNE init_highscores_loop
+    RTS
+}
+
+.compare_highscores
+{
+    LDA #&01
+    STA loop_counter
+    .highscores_loop
+    LDX loop_counter
+    JSR location_of_highscore_x
+    LDY #&00
+    .highscore_digits_loop
+    LDA (sprite_lo),Y
+    CMP current_score,Y
+    BMI highscore_less_than_current
+    BNE highscore_greater_than_current
+    INY
+    CPY #&08
+    BNE highscore_digits_loop
+    .highscore_greater_than_current
+    INC loop_counter
+    LDA loop_counter
+    CMP #&0B
+    BCC highscores_loop
+    RTS
+    .highscore_less_than_current
+    JSR shift_highscores
+    LDY #&07
+    .copy_score_loop
+    LDA current_score,Y
+    STA (sprite_lo),Y
+    DEY
+    BPL copy_score_loop
+    LDY #&0F
+    LDA #&20
+    .clear_name_loop
+    STA (sprite_lo),Y
+    DEY
+    CPY #&07
+    BNE clear_name_loop
+    RTS
+    .shift_highscores
+    LDA #&09
+    STA &8B
+    .shift_highscores_loop
+    LDX &8B
+    CPX loop_counter
+    BCC all_shifted
+    JSR location_of_highscore_x
+    LDY #&0F
+    .copy_entry_from_table_to_buffer_loop
+    LDA (sprite_lo),Y
+    STA duck_x,Y
+    DEY
+    BPL copy_entry_from_table_to_buffer_loop
+    LDX &8B
+    INX
+    JSR location_of_highscore_x
+    LDY #&0F
+    .copy_entry_from_buffer_to_table_loop
+    LDA duck_x,Y
+    STA (sprite_lo),Y
+    DEY
+    BPL copy_entry_from_buffer_to_table_loop
+    DEC &8B
+    JMP shift_highscores_loop
+    .all_shifted
+    LDX loop_counter
+    JSR location_of_highscore_x
+    RTS
+}
+
+.draw_highscores
+{
+    LDA #&01
+    STA loop_counter
+    LXY msg_highscores
+    JSR write_counted_string
+    LDA #&C0
+    STA msg_highscore_y_lo
+    LDA #&02
+    STA msg_highscore_y_hi
+    .draw_highscores_loop
+    LXY msg_highscore_move
+    JSR write_counted_string
+    LDA #&20
+    LDX loop_counter
+    STX &8B
+    CPX #&0A
+    BNE no_tens_digit
+    LDA #&31
+    LDX #&00
+    STX &8B
+    .no_tens_digit
+    JSR oswrch
+    LDA &8B
+    CLC
+    ADC #&30
+    JSR oswrch
+    LDX loop_counter
+    JSR location_of_highscore_x
+    LDY #&00
+    STY &8B
+    .highscore_digits_loop
+    LDA (sprite_lo),Y
+    BNE write_digit
+    LDX &8B
+    BNE write_digit
+    LDA #&20
+    JMP skip_digit
+    .write_digit
+    CLC
+    ADC #&30
+    INC &8B
+    .skip_digit
+    JSR oswrch
+    INY
+    CPY #&08
+    BCC highscore_digits_loop
+    LDA #&20
+    JSR oswrch
+    .highscore_name_loop
+    LDA (sprite_lo),Y
+    JSR oswrch
+    INY
+    CPY #&10
+    BCC highscore_name_loop
+    INC loop_counter
+    LDA loop_counter
+    CMP #&0B
+    BEQ rts
+    LDA msg_highscore_y_lo
+    SEC
+    SBC #&30
+    STA msg_highscore_y_lo
+    LDA msg_highscore_y_hi
+    SBC #&00
+    STA msg_highscore_y_hi
+    JMP draw_highscores_loop
+    .rts
+    RTS
+}
+
+.check_highscore
+{
+    JSR compare_highscores
+    LDA loop_counter
+    CMP #&0B
+    BNE new_highscore
+    RTS
+    .new_highscore
+    STA param
+    LDA #&C0
+    STA msg_name_y_lo
+    LDA #&02
+    STA msg_name_y_hi
+    LDA param
+    SEC
+    SBC #&01
+    BEQ no_subtraction
+    TAX
+    .subtract_x_times_48_loop
+    LDA msg_name_y_lo
+    SEC
+    SBC #&30
+    STA msg_name_y_lo
+    LDA msg_name_y_hi
+    SBC #&00
+    STA msg_name_y_hi
+    DEX
+    BNE subtract_x_times_48_loop
+    .no_subtraction
+    LXY msg_enter_your_name
+    JSR write_counted_string
+    LDA player
+    CLC
+    ADC #&31
+    JSR oswrch
+    JSR draw_highscores
+    LXY msg_name_move
+    JSR write_counted_string
+    LDA #&04
+    LDX #&01
+    JSR osbyte
+    LDA #&0F
+    LDX #&01
+    JSR osbyte
+    LDA #&E5
+    LDX #&01
+    LDY #&00
+    JSR osbyte
+    LXY osword_line_block
+    LDA #&00
+    JSR osword
+    LDX param
+    JSR location_of_highscore_x
+    LDY #&08
+    .copy_name_loop
+    LDA line_buffer_minus_eight,Y
+    CMP #&0D
+    BEQ rts
+    STA (sprite_lo),Y
+    INY
+    CPY #&10
+    BCC copy_name_loop
+    .rts
+    RTS
+}
+.msg_highscores {
+    MSG_LENGTH
+    VDU_GCOL 0, 1
+    VDU_MOVE 288, 800
+    EQUS "HIGH SCORES"
+    VDU_GCOL 0, 3
+    .MSG_END
+}
+.msg_highscore_move {
+    MSG_LENGTH
+    EQUB &19
+    EQUB &04
+    EQUS " "
+    EQUB &00
+    .^msg_highscore_y_lo
+    EQUB &00
+    .^msg_highscore_y_hi
+    EQUB &00
+    .MSG_END
+}
+.msg_name_move {
+    MSG_LENGTH
+    VDU_GCOL 0, 1
+    EQUB &19
+    EQUB &04
+    EQUB &A0
+    EQUB &02
+    .^msg_name_y_lo
+    EQUB &00
+    .^msg_name_y_hi
+    EQUB &00
+    EQUS ">"
+    .MSG_END
+}
+.msg_enter_your_name {
+    MSG_LENGTH
+    VDU_GRAPHICS_WINDOW 0, 0, 1279, 892 
+    VDU_CLG
+    VDU_RESET_WINDOW
+    VDU_GCOL 0, 1
+    VDU_MOVE 160, 160
+    EQUS "ENTER YOUR NAME"
+    VDU_MOVE 384, 100
+    VDU_GCOL 0, 2
+    EQUS "Play"
+    .^line_buffer_minus_eight
+    EQUS "er "
+    .MSG_END
+}
+.osword_line_block
+EQUB &A2
+EQUS ")"
+EQUB &08
+EQUS " "
+EQUB &7F
+.line_buffer
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+EQUB &00
+
+.entry_point
+{
+    JSR one_time_init
+    .outer_loop
+    JSR carousel
+    JSR select_player_count
+    .one_life_loop
+    LXY msg_get_ready
+    JSR write_counted_string
+    LXY msg_player
+    JSR write_counted_string
+    LDA player
+    CLC
+    ADC #&31
+    JSR oswrch
+    LDA #&14
+    JSR sleep
+    .level_loop
+    JSR init_level_state
+    JSR init_and_draw_level
+    JSR init_mobile_things
+    LDA #&7C
+    JSR osbyte
+    .game_loop
+    JSR test_keys
+    JSR update_harry
+    JSR harry_motion_noises
+    JSR update_lift
+    JSR update_birds_timers
+    JSR check_extra_lives
+    JSR hit_test_birds
+    JSR wait_for_interval_timer
+    LDA dead_flag
+    BNE harry_died
+    LDA harry_y
+    CMP #&11
+    BCC harry_died
+    LDA egg_remaining_count
+    BEQ eggs_all_collected
+    LDA key_press_bits
+    BMI outer_loop
+    JMP game_loop
+    .eggs_all_collected
+    LDA bonus_gone_flag
+    BNE bonus_already_gone
+    .accumulate_bonus_loop
+    LDA #&01
+    LDX #&06
+    JSR add_to_score
+    JSR decrement_bonus
+    JSR check_extra_lives
+    LDA bonus_1
+    BEQ fifty_divides_bonus
+    CMP #&05
+    BNE skip_bonus_sound
+    .fifty_divides_bonus
+    LXY sound4
+    LDA #&07
+    JSR osword
+    .skip_bonus_sound
+    LDA bonus_gone_flag
+    BEQ accumulate_bonus_loop
+    .bonus_already_gone
+    INC level_number
+    JSR save_player_state
+    JSR init_player_level_state
+    JSR restore_player_state
+    JMP level_loop
+    .harry_died
+    JSR save_player_state
+    LXY dead_tune
+    JSR play_tune
+    LDX player
+    DEC player_lives,X
+    BNE lives_remaining
+    LXY msg_game_over
+    JSR write_counted_string
+    LXY msg_player
+    JSR write_counted_string
+    LDA player
+    CLC
+    ADC #&31
+    JSR oswrch
+    LDA #&0A
+    JSR sleep
+    LDA #&7C
+    JSR osbyte
+    JSR check_highscore
+    LDA #&05
+    JSR sleep
+    DEC player_remaining_count
+    BEQ all_players_dead
+    .lives_remaining
+    LDX player
+    INX
+    TXA
+    AND #&03
+    STA player
+    CMP player_total_count
+    BCS lives_remaining
+    TAX
+    LDA player_lives,X
+    BEQ lives_remaining
+    JSR restore_player_state
+    JMP one_life_loop
+    .all_players_dead
+    JMP outer_loop
+    .msg_game_over {
+        MSG_LENGTH
+        VDU_GRAPHICS_WINDOW 256, 336, 1024, 532 
+        VDU_CLG
+        VDU_RESET_WINDOW
+        VDU_MOVE 352, 500
+        VDU_GCOL 0, 8
+        EQUS "GAME OVER"
+        .MSG_END
+    }
+    .msg_get_ready {
+        MSG_LENGTH
+        VDU_CLG
+        VDU_MOVE 352, 500
+        VDU_GCOL 0, 4
+        EQUS "Get Ready"
+        VDU_GCOL 0, 8
+        .MSG_END
+    }
+    .msg_player {
+        MSG_LENGTH
+        VDU_MOVE 384, 400
+        EQUS "Player "
+        .MSG_END
+    }
+    .one_time_init
+    LDA #&8C
+    LDX #&0C
+    LDY #&00
+    JSR osbyte
+    LDX #&00
+    .download_memory_loop
+    LDA &3000,X
+    STA draw_key_selection_indirect,X
+    LDA &3100,X
+    STA &0A00,X
+    LDA &3200,X
+    STA &0B00,X
+    LDA &3300,X
+    STA &0C00,X
+    LDA &3400,X
+    STA &0D00,X
+    LDA &3500,X
+    STA &0E00,X
+    LDA &3600,X
+    STA &0F00,X
+    LDA &3700,X
+    STA &1000,X
+    DEX
+    BNE download_memory_loop
+    LDA #&16
+    JSR oswrch
+    LDA #&02
+    JSR oswrch
+    LDA #&05
+    JSR oswrch
+    LDA #&05
+    JSR oswrch
+    LDA #&9D
+    STA key_jump
+    LDA #&BE
+    STA key_up
+    LDA #&9E
+    STA key_down
+    LDA #&99
+    STA key_left
+    LDA #&98
+    STA key_right
+    JSR init_highscores
+    LXY envelope1
+    LDA #&08
+    JSR osword
+    LXY envelope2
+    LDA #&08
+    JSR osword
+    LXY envelope3
+    LDA #&08
+    JSR osword
+    LDX #&0F
+    STX param
+    .set_palette_loop
+    LDX param
+    STX msg_palette_logical
+    LDA palette_table,X
+    STA msg_palette_physical
+    LXY msg_palette
+    JSR write_counted_string
+    DEC param
+    BPL set_palette_loop
+    RTS
+    .msg_palette {
+        MSG_LENGTH
+        EQUB &13
+        .^msg_palette_logical
+        EQUB &00
+        .^msg_palette_physical
+        EQUB &00
+        EQUB &00
+        EQUB &00
+        EQUB &00
+        .MSG_END
+    }
+    .palette_table
+    EQUB &00
+    EQUB &03
+    EQUB &05
+    EQUB &02
+    EQUB &03
+    EQUB &03
+    EQUB &03
+    EQUB &03
+    EQUB &06
+    EQUB &06
+    EQUB &06
+    EQUB &06
+    EQUB &03
+    EQUB &03
+    EQUB &03
+    EQUB &03
+    .select_player_count
+    LXY msg_how_many_players
+    JSR write_counted_string
+    LDA #&00
+    STA &8B
+    LDA #&64
+    STA &8C
+    .wait_for_player_count_loop
+    LDX #scan_1 EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ one_not_pressed
+    LDA #&01
+    JMP init_player_count
+    .one_not_pressed
+    LDX #scan_2 EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ two_not_pressed
+    LDA #&02
+    JMP init_player_count
+    .two_not_pressed
+    LDX #scan_3 EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ three_not_pressed
+    LDA #&03
+    JMP init_player_count
+    .three_not_pressed
+    LDX #scan_4 EOR &FF
+    LDY #&FF
+    LDA #&81
+    JSR osbyte
+    CPY #&00
+    BEQ four_not_pressed
+    LDA #&04
+    JMP init_player_count
+    .four_not_pressed
+    DEC &8B
+    BNE wait_for_player_count_loop
+    DEC &8C
+    BNE wait_for_player_count_loop
+    PLA
+    PLA
+    JMP outer_loop
+    .init_player_count
+    STA player_total_count
+    STA player_remaining_count
+    CLC
+    ADC #&30
+    JSR oswrch
+    LDA #&05
+    JSR sleep
+    .init_players_state
+    LDX #&03
+    .init_players_loop
+    LDA #&00
+    STA player_levels,X
+    LDA #&05
+    STA player_lives,X
+    DEX
+    BPL init_players_loop
+    LDX #&03
+    STX param
+    .init_players_scores_loop
+    TXA
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    TAX
+    LDY #&07
+    LDA #&00
+    .init_score_loop
+    STA player_score,X
+    INX
+    DEY
+    BPL init_score_loop
+    DEC param
+    LDX param
+    BPL init_players_scores_loop
+    LDA #&00
+    STA level_number
+    LDA #&04
+    STA player
+    .init_players_level_state_loop
+    DEC player
+    JSR init_player_level_state
+    LDA player
+    BNE init_players_level_state_loop
+    JSR restore_player_state
+    LDA #&1A
+    JSR oswrch
+    RTS
+    .msg_how_many_players {
+        MSG_LENGTH
+        VDU_CLG
+        VDU_MOVE 32, 500
+        EQUS "How many players? "
+        .MSG_END
+    }
+    .sleep
+    STA loop_counter
+    .sleep_outer_loop
+    LDY #&00
+    LDX #&00
+    .sleep_inner_loop
+    DEX
+    BNE sleep_inner_loop
+    DEY
+    BNE sleep_inner_loop
+    DEC loop_counter
+    BNE sleep_outer_loop
+    RTS
+    .carousel
+    TSX
+    STX carousel_stack_top
+    JSR init_four_players
+    .carousel_loop
+    LDA #&10
+    JSR oswrch
+    JSR draw_chuckie_banner
+    JSR draw_highscores
+    JSR draw_press_s_to_start
+    LDA #&1E
+    STA loop_counter
+    .highscores_visible_loop
+    JSR carousel_test_keys_sleep
+    DEC loop_counter
+    BNE highscores_visible_loop
+    JSR carousel_draw_game_screen
+    LDA #&14
+    STA loop_counter
+    .game_screen_visible_loop
+    JSR carousel_test_keys_sleep
+    DEC loop_counter
+    BNE game_screen_visible_loop
+    LDA #&10
+    JSR oswrch
+    JSR draw_chuckie_banner
+    JSR draw_key_selection_indirect
+    JSR draw_press_s_to_start
+    LDA #&1E
+    STA loop_counter
+    .key_selection_visible_loop
+    JSR carousel_test_keys_sleep
+    DEC loop_counter
+    BNE key_selection_visible_loop
+    JSR carousel_draw_game_screen
+    LDA #&14
+    STA loop_counter
+    .game_screen_visible_again_loop
+    JSR carousel_test_keys_sleep
+    DEC loop_counter
+    BNE game_screen_visible_again_loop
+    JMP carousel_loop
+    .carousel_draw_game_screen
+    JSR randomise
+    LDA rand1
+    AND #&07
+    STA level_number
+    STA scenario_number
+    JSR init_and_draw_level
+    JSR init_mobile_things
+    RTS
+    .init_four_players
+    LDA #&04
+    STA player_total_count
+    STA player_remaining_count
+    JSR init_players_state
+    JSR init_level_state
+    RTS
+    .draw_chuckie_banner
+    LDA #&02
+    STA sprite_colour_mask_left
+    LDA #&30
+    LDX #&02
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&31
+    LDX #&11
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&32
+    LDX #&20
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&30
+    LDX #&2F
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&33
+    LDX #&3E
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&34
+    LDX #&4D
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&35
+    LDX #&5C
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&35
+    LDX #&72
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&36
+    LDX #&81
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    LDA #&36
+    LDX #&90
+    LDY #&F0
+    JSR draw_chuckie_banner_letter
+    RTS
+    .draw_press_s_to_start
+    LXY msg_press_s_to_start
+    JSR write_counted_string
+    RTS
+    .msg_press_s_to_start {
+        MSG_LENGTH
+        VDU_MOVE 128, 100
+        VDU_GCOL 0, 4
+        EQUS "Press "
+        VDU_GCOL 0, 8
+        EQUS "S "
+        VDU_GCOL 0, 4
+        EQUS "to start"
+        VDU_MOVE 128, 50
+        VDU_GCOL 0, 8
+        EQUS "K "
+        VDU_GCOL 0, 4
+        EQUS "to change keys"
+        .MSG_END
+    }
+    .carousel_test_keys
+    LDA #&81
+    LDX #scan_S EOR &FF
+    LDY #&FF
+    JSR osbyte
+    CPY #&00
+    BEQ s_not_pressed
+    LDX carousel_stack_top
+    TXS
+    RTS
+    .s_not_pressed
+    LDA #&81
+    LDX #scan_K EOR &FF
+    LDY #&FF
+    JSR osbyte
+    CPY #&00
+    BNE k_pressed
+    RTS
+    .k_pressed
+    LDX carousel_stack_top
+    TXS
+    JSR select_keys
+    JMP carousel_loop
+    .carousel_test_keys_sleep
+    JSR carousel_test_keys
+    LDX #&00
+    LDY #&00
+    .carousel_test_keys_sleep_loop
+    DEX
+    BNE carousel_test_keys_sleep_loop
+    DEY
+    BNE carousel_test_keys_sleep_loop
+    RTS
+    .draw_chuckie_banner_letter
+    PHA
+    JSR calculate_screen_location
+    PLA
+    JSR lookup_sprite
+    JSR draw_sprite
+    RTS
+    .init_level_state
+    LDA level_number
+    AND #&07
+    STA scenario_number
+    LDA level_number
+    LSR A
+    LSR A
+    LSR A
+    STA round_number
+    LDA #&00
+    STA duck_loose_flag
+    LDA round_number
+    BEQ not_first_round
+    INC duck_loose_flag
+    .not_first_round
+    LDA #&00
+    STA birds_timer_cycle
+    LDA #&00
+    STA current_chicken
+    LDA #&08
+    LDX round_number
+    CPX #&04
+    BCC early_round_slow_chickens
+    LDA #&05
+    .early_round_slow_chickens
+    STA chicken_speed
+    LDA #&00
+    STA extra_life_flag
+    STA dead_flag
+    STA clock_stop_timer
+    LDA #&76
+    STA rand1
+    STA rand2
+    STA rand3
+    STA rand4
+    RTS
+    .init_player_level_state
+    LDA player
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    TAX
+    LDA level_number
+    CLC
+    ADC #&01
+    CMP #&0A
+    BCC bonus_in_range
+    LDA #&09
+    .bonus_in_range
+    STA player_level_bonus,X
+    LDA #&00
+    STA &0509,X
+    STA &050A,X
+    STA &050B,X
+    LDY #&10
+    .clear_flags_loop
+    STA player_egg_flags,X
+    STA player_grain_flags,X
+    INX
+    DEY
+    BNE clear_flags_loop
+    RTS
+    .restore_player_state
+    LDX player
+    LDA player_levels,X
+    STA level_number
+    TXA
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    ASL A
+    STA player_data_index
+    TAX
+    LDY #&00
+    .restore_score_loop
+    LDA player_score,X
+    STA current_score,Y
+    INX
+    INY
+    CPY #&08
+    BCC restore_score_loop
+    LDX player_data_index
+    LDY #&00
+    .restore_bonus_loop
+    LDA player_level_bonus,X
+    STA bonus_3,Y
+    INX
+    INY
+    CPY #&04
+    BCC restore_bonus_loop
+    LDX player
+    LDA #&00
+    CLC
+    .x_times_34_loop
+    ADC #&22
+    DEX
+    BPL x_times_34_loop
+    SEC
+    SBC #&15
+    STA score_x_position
+    RTS
+    .save_player_state
+    LDX player
+    LDA level_number
+    STA player_levels,X
+    LDX player_data_index
+    LDY #&00
+    .save_score_loop
+    LDA current_score,Y
+    STA player_score,X
+    INX
+    INY
+    CPY #&08
+    BCC save_score_loop
+    LDX player_data_index
+    LDY #&00
+    .save_bonus_loop
+    LDA bonus_3,Y
+    STA player_level_bonus,X
+    INX
+    INY
+    CPY #&04
+    BCC save_bonus_loop
+    RTS
+    .init_mobile_things
+    LDA lift_flag
+    BEQ no_lift
+    LDA #&08
+    STA lift_y1
+    LDA #&5A
+    STA lift_y2
+    LDA #&00
+    STA lift_alternator
+    LDA #&02
+    STA sprite_colour_mask_left
+    LDA #&05
+    JSR lookup_sprite
+    LDX lift_x
+    LDY lift_y1
+    JSR calculate_screen_location
+    JSR draw_sprite
+    LDA #&05
+    JSR lookup_sprite
+    LDX lift_x
+    LDY lift_y2
+    JSR calculate_screen_location
+    JSR draw_sprite
+    .no_lift
+    LDA #&04
+    STA duck_x
+    LDA #&CC
+    STA duck_y
+    LDA #&00
+    STA duck_vx
+    STA duck_vy
+    STA duck_direction_flap
+    JSR draw_duck
+    LDX #&FF
+    STX param
+    LDA round_number
+    CMP #&01
+    BNE round_has_chickens
+    LDX #&00
+    STX chicken_count
+    .round_has_chickens
+    CMP #&03
+    BCC init_chickens_loop
+    LDX #&05
+    STX chicken_count
+    .init_chickens_loop
+    INC param
+    LDX param
+    CPX chicken_count
+    BCS done_chickens
+    LDA chicken_board_xs,X
+    ASL A
+    ASL A
+    ASL A
+    STA chicken_xs,X
+    LDA chicken_board_ys,X
+    ASL A
+    ASL A
+    ASL A
+    CLC
+    ADC #&14
+    STA chicken_ys,X
+    LDA #&00
+    STA chicken_states,X
+    STA chicken_sprite_indices,X
+    LDA #&02
+    STA chicken_directions,X
+    JSR draw_chicken
+    JMP init_chickens_loop
+    .done_chickens
+    LDA #&03
+    JSR sleep
+    LDA #&3C
+    STA harry_x
+    LDA #&20
+    STA harry_y
+    LDA #&06
+    STA harry_sprite_index
+    JSR draw_harry
+    LDA #&07
+    STA harry_board_x
+    STA harry_cell_x
+    LDA #&02
+    STA harry_board_y
+    LDA #&00
+    STA harry_cell_y
+    STA harry_state
+    LDA #&01
+    STA harry_facing
+    JSR draw_current_life_marker
+    RTS
+    .check_extra_lives
+    LDA extra_life_flag
+    BNE extra_life
+    RTS
+    .extra_life
+    LDA #&00
+    STA extra_life_flag
+    JSR draw_current_life_marker
+    LDX player
+    INC player_lives,X
+    RTS
+    .draw_current_life_marker
+    LDA #&20
+    STA sprite_colour_mask_left
+    LDX player
+    LDA player_lives,X
+    CMP #&09
+    BCC marker_visible
+    RTS
+    .marker_visible
+    ASL A
+    ASL A
+    ADC score_x_position
+    ADC #&0A
+    TAX
+    LDY #&EE
+    JSR calculate_screen_location
+    LDA #&2F
+    JSR lookup_sprite
+    JSR draw_sprite
+    RTS
+    .play_tune
+    STX sprite_lo
+    STY sprite_hi
+    LDY #&00
+    STY &89
+    LDA (sprite_lo),Y
+    STA loop_counter
+    .play_tune_loop
+    LDY &89
+    INY
+    LDA (sprite_lo),Y
+    STA sound2_pitch
+    INY
+    LDA (sprite_lo),Y
+    STA sound2_duration
+    STY &89
+    LXY sound2
+    LDA #&07
+    JSR osword
+    DEC loop_counter
+    BNE play_tune_loop
+    RTS
+    .dead_tune
+    EQUB &10
+    EQUS "!"
+    EQUB &04
+    EQUS ")"
+    EQUB &02
+    EQUS "!"
+    EQUB &04
+    EQUB &19
+    EQUB &02
+    EQUB &15
+    EQUB &04
+    EQUB &05
+    EQUB &02
+    EQUB &0D
+    EQUB &04
+    EQUB &01
+    EQUB &02
+    EQUB &05
+    EQUB &0C
+    EQUB &05
+    EQUB &01
+    EQUB &0D
+    EQUB &01
+    EQUB &15
+    EQUB &01
+    EQUB &19
+    EQUB &01
+    EQUS "!"
+    EQUB &01
+    EQUS "1"
+    EQUB &01
+    EQUS "5"
+    EQUB &01
+    .envelope1
+    EQUB &01
+    EQUB &01
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUS "~"
+    EQUB &CE
+    EQUB &00
+    EQUB &00
+    EQUS "d"
+    EQUB &00
+    .envelope2
+    EQUB &02
+    EQUB &01
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUS "~"
+    EQUB &FE
+    EQUB &00
+    EQUB &FB
+    EQUS "~d"
+    .envelope3
+    EQUB &03
+    EQUB &01
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUS "2"
+    EQUB &00
+    EQUB &00
+    EQUB &E7
+    EQUS "d"
+    EQUB &00
+    .end_padding
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+    EQUB &00
+}
