@@ -8,7 +8,7 @@ It doesn't include the loading program, which is purely decorative.
 
 The build creates a new executable and compares it to the original; and creates a bootable ssd.
 
-This initial version is entirely machine-generated.  It doesn't have any comments.  However, all the variables and labels have been given meaningful names.  Bytes from &80-&8F are used as scratch space so they are mostly unlabelled.
+This version is nearly all machine-generated from a list of labels and addresses.  It doesn't have any comments.  However, all the variables and labels have been given meaningful names.  Bytes from &80-&8F are used as scratch space so they are mostly unlabelled.
 
 The disassembler splits the source into scope blocks.  It chooses the minimum number of blocks such that code is always in a block and the entry point isn't.  So the blocks are rather arbitrary.  If the entry point had been at the start then there would be only one block.
 
